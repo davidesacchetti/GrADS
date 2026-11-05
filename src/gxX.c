@@ -16,6 +16,8 @@
 #include <X11/Xos.h>
 #include <X11/Xatom.h>
 #include <X11/keysym.h>
+#include <sys/time.h>
+#include <sys/select.h>
 
 #include <cairo.h>
 #include <cairo-xlib.h>
@@ -543,15 +545,19 @@ gaint j1, j2, ca, cb, x1, x2;
 static void gxwpdraw (struct gxwpop *p) {
 struct gdmu *gmu;
 cairo_t *c;
+cairo_surface_t *img;
 char buf[512];
 gaint k, lw, j1, j2, w, h;
 
   gmu = p->gmu;
   lw = p->lw; w = p->isiz; h = p->jsiz;
-  c = cairo_create(surface);
-  cairo_rectangle(c, p->imin, p->jmin, w, h);
-  cairo_clip(c);
-  cairo_translate(c, p->imin, p->jmin);
+  /* Draw off-screen, then copy in one go: no flicker */
+  img = cairo_image_surface_create(CAIRO_FORMAT_RGB24, w, h);
+  c = cairo_create(img);
+  if (p->save) {
+    cairo_set_source_surface(c, p->save, 0, 0);
+    cairo_paint(c);
+  }
   cairo_set_antialias(c, CAIRO_ANTIALIAS_NONE);
   cairo_set_line_cap(c, CAIRO_LINE_CAP_SQUARE);
   if (gmu->bbc>-1) {
@@ -594,6 +600,13 @@ gaint k, lw, j1, j2, w, h;
     }
   }
   cairo_destroy(c);
+  cairo_surface_flush(img);
+  c = cairo_create(surface);
+  cairo_set_source_surface(c, img, p->imin, p->jmin);
+  cairo_rectangle(c, p->imin, p->jmin, w, h);
+  cairo_fill(c);
+  cairo_destroy(c);
+  cairo_surface_destroy(img);
   cairo_surface_flush(surface);
   XFlush(display);
 }
@@ -625,10 +638,53 @@ gaint n;
   return (dmu[n].num==n);
 }
 
+/* Delay (ms) before a cascade menu opens, or closes when the pointer
+   rests on another item of a parent menu. Avoids menus that open and
+   close continuously while the pointer moves across them. */
+
+#define GXWPDLY 300
+
+static long gxwpms (void) {
+struct timeval tv;
+  gettimeofday(&tv, NULL);
+  return (tv.tv_sec*1000L + tv.tv_usec/1000L);
+}
+
+/* Next pointer event into report, waiting at most until the time
+   deadline (ms; -1 means forever). Returns 0 on timeout. */
+
+static gaint gxwpnext (long deadline) {
+long mask, msk2, ms;
+fd_set fds;
+struct timeval tv;
+gaint fd;
+
+  mask = ButtonPressMask | ButtonReleaseMask | ButtonMotionMask | PointerMotionMask;
+  msk2 = ButtonMotionMask | PointerMotionMask;
+  fd = ConnectionNumber(display);
+  while (1) {
+    if (deadline<0) XMaskEvent(display, mask, &report);
+    else if (!XCheckMaskEvent(display, mask, &report)) {
+      ms = deadline - gxwpms();
+      if (ms<=0) return (0);
+      XFlush(display);
+      FD_ZERO(&fds);
+      FD_SET(fd, &fds);
+      tv.tv_sec = ms/1000;
+      tv.tv_usec = (ms%1000)*1000;
+      select(fd+1, &fds, NULL, NULL, &tv);
+      continue;
+    }
+    if (report.type==MotionNotify) {
+      while (XCheckMaskEvent(display, msk2, &report));
+    }
+    return (1);
+  }
+}
+
 /* Show a menu and follow the pointer until a selection is made.
    porig, iorig, jorig: preferred position. Returns -999 when done,
-   -99 if the pointer moved back to another item of a parent menu,
-   or the index of another drop menu header the pointer moved onto. */
+   or -99 if the pointer rested on another item of a parent menu. */
 
 static gaint gxwpopdm (struct gdmu *gmu, gaint iobj, gaint porig, gaint iorig, gaint jorig) {
 struct gxwpop *p;
@@ -637,6 +693,8 @@ cairo_text_extents_t te;
 cairo_font_extents_t fe;
 char buf[512];
 gaint lvl, k, w, maxw, cascf, i, j, item, itemold, dmflag, reuse, r, ii, moved;
+gaint fast, pend, clos, got;
+long pendt, clost, deadline;
 
   lvl = ++dmlev;
   p = &(gxwpops[lvl]);
@@ -710,68 +768,81 @@ gaint lvl, k, w, maxw, cascf, i, j, item, itemold, dmflag, reuse, r, ii, moved;
   itemold = -1;
   dmflag = -999;
   reuse = 0;
+  fast = 0;
+  pend = -1; pendt = 0;    /* cascade waiting to be opened, and when */
+  clos = 0;  clost = 0;    /* this menu waiting to be closed, and when */
   moved = (lvl>0);   /* the release of the click opening the menu does not select */
   while (1) {
-    if (!reuse) {
-      XMaskEvent(display, ButtonPressMask | ButtonReleaseMask |
-                 ButtonMotionMask | PointerMotionMask, &report);
-      if (report.type==MotionNotify) {
-        while (XCheckMaskEvent(display, ButtonMotionMask | PointerMotionMask, &report));
-      }
+    if (reuse) got = 1;
+    else {
+      deadline = -1;
+      if (pend>-1) deadline = pendt;
+      if (clos && (deadline<0 || clost<deadline)) deadline = clost;
+      got = gxwpnext(deadline);
     }
     reuse = 0;
-    if (report.type==MotionNotify) { i = report.xmotion.x; j = report.xmotion.y;
-      if (abs(i-dmpi)>3 || abs(j-dmpj)>3) moved = 1; }
-    else { i = report.xbutton.x; j = report.xbutton.y; }
-    item = gxwpitem(p, i, j);
-    if (item!=p->hi) { p->hi = item; gxwpdraw(p); }
 
-    if (report.type==ButtonPress) {
-      /* A click makes the selection (or closes the menu if outside) */
-      if (gxwpcasc(p, item)) {
-        dmcur[lvl] = item;
-        r = gxwpopdm(&(dmu[p->ptrs[item]]), iobj, p->imin, p->imax, p->jmin + item*p->h);
-        if (r==-99) { gxwpclr(lvl); itemold = item; reuse = 1; continue; }
-        dmflag = r;
-        if (dmsel[lvl+1]<1) item = -1;
+    if (got) {
+      if (report.type==MotionNotify) { i = report.xmotion.x; j = report.xmotion.y;
+        if (abs(i-dmpi)>3 || abs(j-dmpj)>3) moved = 1; }
+      else { i = report.xbutton.x; j = report.xbutton.y; }
+      item = gxwpitem(p, i, j);
+      if (item!=p->hi) { p->hi = item; gxwpdraw(p); }
+
+      if (report.type==ButtonPress) {
+        /* A click makes the selection (or closes the menu if outside) */
+        pend = -1; clos = 0;
+        if (gxwpcasc(p, item)) {
+          dmcur[lvl] = item;
+          r = gxwpopdm(&(dmu[p->ptrs[item]]), iobj, p->imin, p->imax, p->jmin + item*p->h);
+          if (r==-99) { gxwpclr(lvl); itemold = item; reuse = 1; fast = 1; continue; }
+          dmflag = r;
+          if (dmsel[lvl+1]<1) item = -1;
+        }
+        itemold = item;
+        break;
+      }
+
+      if (report.type==ButtonRelease) {
+        if (item>-1 && moved) { itemold = item; break; }
+        continue;   /* released outside, or without dragging: the menu stays open */
+      }
+
+      /* Pointer motion */
+      if (item==-1) {
+        /* Outside this menu: nothing happens, unless the pointer rests
+           on another item of a parent menu (then this menu closes) */
+        pend = -1;
+        k = 0;
+        for (ii=0; ii<lvl; ii++) {
+          r = gxwpitem(&(gxwpops[ii]), i, j);
+          if (r>-1 && r!=dmcur[ii]) k = 1;
+        }
+        if (!k) clos = 0;
+        else if (!clos) { clos = 1; clost = gxwpms() + (fast ? 0 : GXWPDLY); }
+      } else {
+        clos = 0;
+        if (!gxwpcasc(p, item)) pend = -1;
+        else if (item!=itemold) { pend = item; pendt = gxwpms() + (fast ? 0 : GXWPDLY); }
       }
       itemold = item;
-      break;
+      fast = 0;
     }
 
-    if (report.type==ButtonRelease) {
-      if (item>-1 && moved) { itemold = item; break; }
-      continue;   /* released outside, or without dragging: the menu stays open */
-    }
-
-    /* Pointer motion */
-    if (item==-1) {
-      /* Back on another item of a parent menu: close this one */
-      for (k=0; k<lvl; k++) {
-        r = gxwpitem(&(gxwpops[k]), i, j);
-        if (r>-1 && r!=dmcur[k]) dmflag = -99;
-      }
-      if (dmflag==-99) { itemold = -1; break; }
-      /* On the header of another drop menu: switch to that menu */
-      for (ii=0; ii<512 && obj[ii].type>-1; ii++) {
-        if (ii!=iobj && obj[ii].type==3 &&
-            i>obj[ii].i1 && i<obj[ii].i2 && j>obj[ii].j1 && j<obj[ii].j2) {
-          dmflag = ii;
-          break;
-        }
-      }
-      if (dmflag>-1) { itemold = -1; break; }
-    } else if (item!=itemold && gxwpcasc(p, item)) {
-      /* Entered an item with a cascade menu: open it */
+    /* Timers */
+    if (clos && gxwpms()>=clost) { dmflag = -99; itemold = -1; break; }
+    if (pend>-1 && gxwpms()>=pendt) {
+      /* The pointer rested on an item with a cascade menu: open it */
+      item = pend;
+      pend = -1;
       dmcur[lvl] = item;
       r = gxwpopdm(&(dmu[p->ptrs[item]]), iobj, p->imin, p->imax, p->jmin + item*p->h);
-      if (r==-99) { gxwpclr(lvl); itemold = item; reuse = 1; continue; }
+      if (r==-99) { gxwpclr(lvl); itemold = item; reuse = 1; fast = 1; continue; }
       dmflag = r;
       if (dmsel[lvl+1]<1) item = -1;
       itemold = item;
       break;
     }
-    itemold = item;
   }
 
   /* Selection: 1-based item number; -1 for a cascade item without
@@ -793,8 +864,8 @@ gaint lvl, k, w, maxw, cascf, i, j, item, itemold, dmflag, reuse, r, ii, moved;
   return (dmflag);
 }
 
-/* Click occurred on a drop menu header. Returns -999 when done, or the
-   object index of another drop menu to open (pointer moved onto it). */
+/* Click occurred on a drop menu header. Returns -999 when done.
+   Moving the pointer onto another drop menu header does nothing. */
 
 gaint gxevdm (struct gevent *geve, int iobj, int ipos, int jpos) {
 struct gdmu *gmu;
