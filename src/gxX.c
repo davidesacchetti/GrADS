@@ -137,15 +137,24 @@ gaint i;
   else    { for (i=0; i<512; i++) obj[i].type = -1;  obnum = 0;  }
 }
 
-/* Get a new slot in the list of displayed objects */
+/* Get the slot in the list of displayed objects for a widget (pwd points
+   to its btn/rbb/dmu struct). A widget drawn again (same number) reuses
+   its slot, and slots of cleared widgets are reused: otherwise the list
+   fills up when scripts redraw the same widgets many times. */
 
-static struct gobj *gxwobj (gaint bg) {
-  if (bg) {
-    if (obnum2>511) { printf ("Error: Too many widgets on screen\n"); return (NULL); }
-    return (&(obj2[obnum2++]));
+static struct gobj *gxwobj (gaint bg, void *pwd) {
+struct gobj *ob;
+gaint *pn, i, free;
+  ob = bg ? obj2 : obj;
+  pn = bg ? &obnum2 : &obnum;
+  free = -1;
+  for (i=0; i<*pn; i++) {
+    if (ob[i].type>0 && (void *)ob[i].iob.dmu==pwd) return (&(ob[i]));
+    if (ob[i].type==0 && free<0) free = i;
   }
-  if (obnum>511) { printf ("Error: Too many widgets on screen\n"); return (NULL); }
-  return (&(obj[obnum++]));
+  if (free>-1) return (&(ob[free]));
+  if (*pn>511) { printf ("Error: Too many widgets on screen\n"); return (NULL); }
+  return (&(ob[(*pn)++]));
 }
 
 /* Surface where widgets of a given layer are drawn */
@@ -270,7 +279,7 @@ gaint i, j, w, h, ccc;
 
 static void gxwregb (struct gbtn *gbb, gaint bg) {
 struct gobj *pob;
-  if ((pob = gxwobj(bg)) == NULL) return;
+  if ((pob = gxwobj(bg, gbb)) == NULL) return;
   pob->type = 1;
   pob->mb = -1;
   pob->i1 = gbb->ilo;  pob->i2 = gbb->ihi;
@@ -282,7 +291,7 @@ struct gobj *pob;
 
 static void gxwregr (struct grbb *prb, gaint bg) {
 struct gobj *pob;
-  if ((pob = gxwobj(bg)) == NULL) return;
+  if ((pob = gxwobj(bg, prb)) == NULL) return;
   pob->type = 2;
   pob->mb = prb->mb;
   pob->i1 = (gaint)(prb->xlo*xscl+0.5);
@@ -428,7 +437,7 @@ gaint i, j, w, h;
 
 static void gxwregm (struct gdmu *gmu, gaint bg) {
 struct gobj *pob;
-  if ((pob = gxwobj(bg)) == NULL) return;
+  if ((pob = gxwobj(bg, gmu)) == NULL) return;
   pob->type = 3;
   pob->mb = -1;
   pob->i1 = gmu->ilo;  pob->i2 = gmu->ihi;
