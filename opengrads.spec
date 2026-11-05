@@ -17,8 +17,8 @@
 # 20251120 Paolo Oliveri
 #
 Name:           grads
-Version:        2.2.4
-Release:        0%{?dist}
+Version:        2.2.5
+Release:        1%{?dist}
 Summary:        Tool for easy acces, manipulation, and visualization of data
 
 Group:          Applications/Engineering
@@ -106,6 +106,9 @@ find data/tables -type f -exec install -p -m644 "{}" $RPM_BUILD_ROOT%{_datadir}/
 %{__install} -d -m755 $RPM_BUILD_ROOT%{_datadir}/%{name}/shapefiles
 %{__install} -p -m644 shapefiles/* $RPM_BUILD_ROOT%{_datadir}/%{name}/shapefiles
 
+# Rimuove il file libtool .la non necessario per evitare errori di compilazione RPM
+rm -vf %{buildroot}%{_libdir}/*.la
+
 # Setting temporarily udpt target to build directory to make gex tests
 cat udpt | sed -e "s|GRADSPREFIX|$RPM_BUILD_ROOT%{_prefix}|g" > $RPM_BUILD_ROOT%{_datadir}/%{name}/udpt
 
@@ -184,6 +187,14 @@ cat udpt | sed -e 's|GRADSPREFIX|%{_prefix}|g' > $RPM_BUILD_ROOT%{_datadir}/%{na
 %endif
 
 %changelog
+* Thu Nov 05 2026 ARPAL Sistemi CMI <sistemi.cmi@arpal.liguria.it> - 2.2.5-1
+- Cairo display: long drop menus fit below the header; the release of
+  the click opening a menu no longer selects an item
+- collect accepts all dimensions fixed; coll2gr with only X varying
+  returns a 1-D section (oblique sections of 2-D variables, define)
+* Thu Nov 05 2026 ARPAL Sistemi CMI <sistemi.cmi@arpal.liguria.it> - 2.2.5-0
+- Cairo display: restored widgets (buttons, rubber bands, drop menus),
+  dialog boxes and screen save/show/free
 * Wed Nov 19 2025 Paolo Oliveri <paul@oliveri.info> - 2.2.4-0
 - Updated codebase
 * Wed Jun 4  2025 Paolo Oliveri <paul@oliveri.info> 2.2.3-4

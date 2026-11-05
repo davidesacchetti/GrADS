@@ -1,10 +1,10 @@
 # Type     Name     Full path to shared object file
 # ----     ----     -------------------------------
-gxdisplay  Cairo    GRADSPREFIX/lib/libgxdCairo.so
-gxdisplay  X11      GRADSPREFIX/lib/libgxdX11.so
-gxdisplay  gxdummy  GRADSPREFIX/lib/libgxdummy.so
+gxdisplay  Cairo    /root/rpmbuild/BUILD/grads-2.2.4/src/.libs/libgxdCairo.so
+gxdisplay  X11      /root/rpmbuild/BUILD/grads-2.2.4/src/.libs/libgxdX11.so
+gxdisplay  gxdummy  /root/rpmbuild/BUILD/grads-2.2.4/src/.libs/libgxdummy.so
 *
-gxprint    Cairo    GRADSPREFIX/lib/libgxpCairo.so
-gxprint    GD       GRADSPREFIX/lib/libgxpGD.so
-gxprint    gxdummy  GRADSPREFIX/lib/libgxdummy.so
+gxprint    Cairo    /root/rpmbuild/BUILD/grads-2.2.4/src/.libs/libgxpCairo.so
+gxprint    GD       /root/rpmbuild/BUILD/grads-2.2.4/src/.libs/libgxpGD.so
+gxprint    gxdummy  /root/rpmbuild/BUILD/grads-2.2.4/src/.libs/libgxdummy.so
 *

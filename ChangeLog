@@ -1,3 +1,20 @@
+2026-11-05 Version 2.2.5
+
+    Updates:
+    * Cairo graphics display (libgxdCairo): restored the widgets that were
+      available only with the X11 display: buttons (draw/redraw/clear button),
+      rubber bands (set rband), drop menus with cascades (draw dropmenu),
+      dialog boxes (query dialog, also numeric) and screen save/show/free.
+      Widgets are drawn with Cairo, so labels are anti-aliased.
+    * Drop menus too long for the window are shown with a reduced item
+      height below the header; the release of the click opening a menu
+      does not select an item unless the pointer has been dragged.
+    * collect: all dimensions may be fixed (one value per station).
+    * coll2gr: with only X varying (Z fixed) returns a 1-D section along
+      the collected points, interpolated to the current level. This allows
+      oblique sections of variables not depending on Z, and 'define' of
+      oblique X-Z sections (define evaluates one level at a time).
+
 2025-11-19 Version 2.2.4
 
     Updates:

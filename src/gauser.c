@@ -4739,8 +4739,10 @@ size_t sz;
 
   /* Check environment */
 
+  /* All dimensions fixed is allowed too: a single value per station
+     (e.g. variables not depending on Z, for 1-D sections with coll2gr) */
   if (pcm->vdim[0]!=0 || pcm->vdim[1]!=0 || (pcm->vdim[2]==1 &&
-     pcm->vdim[3]==1) || (pcm->vdim[2] == 0 && pcm->vdim[3] == 0)) {
+     pcm->vdim[3]==1)) {
     gaprnt (0,"Collect Error: Z or T must be the only varying dimension\n");
     return (1);
   }

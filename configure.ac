@@ -9,7 +9,7 @@ dnl  See acinclude.m4 for definitions of the GA_xxx macros
 AC_PREREQ(2.52) 
 
 # The "master" version string that will appear in all code, etc.
-AC_INIT(GrADS, [2.2.4], [jennifer.m.adams@nasa.gov, paul@oliveri.info])
+AC_INIT(GrADS, [2.2.5], [jennifer.m.adams@nasa.gov, paul@oliveri.info])
 
 # Supporting scripts are in etc/ 
 AC_CONFIG_AUX_DIR(etc)

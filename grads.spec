@@ -18,8 +18,8 @@
 #
 
 Name:           grads
-Version:        2.2.4
-Release:        0%{?dist}
+Version:        2.2.5
+Release:        1%{?dist}
 Summary:        Tool for easy acces, manipulation, and visualization of data
 
 Group:          Applications/Engineering
@@ -151,6 +151,14 @@ cat udpt | sed -e 's|GRADSPREFIX|%{_prefix}|g' > $RPM_BUILD_ROOT%{_datadir}/%{na
 %endif
 
 %changelog
+* Thu Nov 05 2026 ARPAL Sistemi CMI <sistemi.cmi@arpal.liguria.it> - 2.2.5-1
+- Cairo display: long drop menus fit below the header; the release of
+  the click opening a menu no longer selects an item
+- collect accepts all dimensions fixed; coll2gr with only X varying
+  returns a 1-D section (oblique sections of 2-D variables, define)
+* Thu Nov 05 2026 ARPAL Sistemi CMI <sistemi.cmi@arpal.liguria.it> - 2.2.5-0
+- Cairo display: restored widgets (buttons, rubber bands, drop menus),
+  dialog boxes and screen save/show/free
 * Wed Nov 19 2025 Paolo Oliveri <paul@oliveri.info> - 2.2.4-0
 - Updated codebase
 * Wed Jun 4  2025 Paolo Oliveri <paul@oliveri.info> 2.2.3-4

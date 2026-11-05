@@ -5145,6 +5145,104 @@ size_t sz;
   return (0);
 }
 
+/* coll2gr with only X varying: one value per collected station, at the
+   level of the dimension environment (linear interpolation between the
+   station levels). A station with a single report (e.g. a variable not
+   depending on Z, collected with all dimensions fixed) gives its value. */
+
+static gaint ffclgr1 (struct gaclct *clct, gaint scnt, struct gastat *pst) {
+  struct gastn *stn;
+  struct garpt *rpt;
+  struct gagrid *pgr=NULL;
+  gadouble *gr=NULL, *iv=NULL, uu=-9.99e8, lev, lld, lhd, llo, lhi, vlo, vhi, xdiff;
+  char *gru=NULL, ulo, uhi;
+  gaint i, flag;
+  size_t sz;
+
+  lev = pst->dmin[2];
+  gr  = (gadouble *)galloc(sizeof(gadouble)*scnt,"col2gr1gr");
+  gru = (char *)galloc(sizeof(char)*scnt,"col2gr1gru");
+  iv  = (gadouble *)galloc(sizeof(gadouble)*(scnt+2),"col2gr1iv");
+  pgr = (struct gagrid *)galloc(sizeof(struct gagrid),"col2gr1pgr");
+  if (gr==NULL || gru==NULL || iv==NULL || pgr==NULL) {
+    gaprnt (0,"Error from COLL2GR: failed to allocate memory for 1-D section\n");
+    goto err;
+  }
+
+  for (i=0; i<scnt && clct; i++, clct=clct->forw) {
+    stn = clct->stn;
+    rpt = stn->rpt;
+    if (i==0) uu = stn->undef;
+    *(gru+i) = 0;
+    *(gr+i) = stn->undef;
+    if (rpt==NULL) continue;
+    if (stn->rnum==1) {                 /* single value */
+      *(gr+i) = rpt->val;
+      *(gru+i) = rpt->umask;
+      continue;
+    }
+    lld = 9.99e33; lhd = 9.99e33;
+    llo = lev; lhi = lev;
+    vlo = vhi = stn->undef;
+    ulo = uhi = 0;
+    flag = 0;
+    while (rpt) {
+      if (dequal(rpt->lev,lev,1.0e-8)==0) { flag = 1; break; }
+      if (rpt->lev<lev) {
+        if (lev-rpt->lev<lld) { lld = lev-rpt->lev; llo = rpt->lev; vlo = rpt->val; ulo = rpt->umask; }
+      } else {
+        if (rpt->lev-lev<lhd) { lhd = rpt->lev-lev; lhi = rpt->lev; vhi = rpt->val; uhi = rpt->umask; }
+      }
+      rpt = rpt->rpt;
+    }
+    if (flag) {
+      *(gr+i) = rpt->val;
+      *(gru+i) = rpt->umask;
+    } else if (lld<9e33 && lhd<9e33 && ulo && uhi) {
+      *(gr+i) = vlo + (vhi-vlo)*(lev-llo)/(lhi-llo);
+      *(gru+i) = 1;
+    }
+  }
+
+  pgr->grid = gr;
+  pgr->umask = gru;
+  pgr->undef = uu;
+  pgr->isiz = scnt;
+  pgr->jsiz = 1;
+  pgr->idim = 0;
+  pgr->jdim = -1;
+  pgr->iwrld = 1; pgr->jwrld = 0;
+  for (i=0; i<5; i++) { pgr->dimmin[i] = 1; pgr->dimmax[i] = 1; }
+  pgr->dimmax[0] = scnt;
+  pgr->exprsn = NULL;
+  pgr->ilinr = 0;
+  pgr->jlinr = 0;
+  *iv = (gadouble)scnt;
+  xdiff = (scnt>1) ? (pst->dmax[0] - pst->dmin[0]) / ((gadouble)(scnt-1)) : 0.0;
+  for (i=1; i<=scnt; i++) *(iv+i) = pst->dmin[0] + (gadouble)(i-1) * xdiff;
+  *(iv+scnt+1) = -999.9;
+  pgr->ivals = iv;
+  pgr->jvals = NULL;
+  pgr->iavals = pgr->ivals;
+  pgr->javals = NULL;
+  pgr->igrab = gr2lev;
+  pgr->jgrab = NULL;
+  pgr->iabgr = lev2gr;
+  pgr->jabgr = NULL;
+  pgr->alocf = 1;
+
+  pst->type = 1;
+  pst->result.pgr = pgr;
+  return (0);
+
+ err:
+  if (gr) gree(gr,"f434");
+  if (gru) gree(gru,"f435");
+  if (iv) gree(iv,"f436");
+  if (pgr) gree(pgr,"f437");
+  return (1);
+}
+
 gaint ffclgr (struct gafunc *pfc, struct gastat *pst) {
   struct gaclct *clct, *clct0;
   struct gastn *stn;
@@ -5203,6 +5301,13 @@ gaint ffclgr (struct gafunc *pfc, struct gastat *pst) {
     if (dim==-1) dim = stn->idim;
     if (dim != stn->idim) dim = -999;
     clct = clct->forw;
+  }
+  /* Only X varying (Z fixed): 1-D section along the collected points.
+     This also allows variables not depending on Z (collected with all
+     dimensions fixed) and 'define' of 2-D sections (define evaluates
+     one level at a time) */
+  if (pst->idim==0 && pst->jdim==-1 && (dim==-1 || dim==2)) {
+    return (ffclgr1(clct0, scnt, pst));
   }
   if (dim == -999 || dim != pst->jdim || pst->idim != 0 || dim<2 || dim>3 ) {
     gaprnt (0,"Error from COLL2GR:  Invalid dimension environment\n");
