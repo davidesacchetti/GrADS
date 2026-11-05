@@ -18,7 +18,7 @@
 #
 Name:           grads
 Version:        2.2.5
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        Tool for easy acces, manipulation, and visualization of data
 
 Group:          Applications/Engineering
@@ -187,6 +187,10 @@ cat udpt | sed -e 's|GRADSPREFIX|%{_prefix}|g' > $RPM_BUILD_ROOT%{_datadir}/%{na
 %endif
 
 %changelog
+* Thu Nov 05 2026 ARPAL Sistemi CMI <sistemi.cmi@arpal.liguria.it> - 2.2.5-2
+- Cairo display: stable drop menus; cascade menus open/close only when
+  the pointer rests on an item, no switch to other drop menus on hover
+- Added hres_world, lres_world, mres_world map files (arpal/data)
 * Thu Nov 05 2026 ARPAL Sistemi CMI <sistemi.cmi@arpal.liguria.it> - 2.2.5-1
 - Cairo display: long drop menus fit below the header; the release of
   the click opening a menu no longer selects an item
