@@ -98,6 +98,9 @@ libtool --finish $RPM_BUILD_ROOT%{_libdir}
 find data -type f -exec install -p -m644 "{}" $RPM_BUILD_ROOT%{_datadir}/%{name} \;
 find data/tables -type f -exec install -p -m644 "{}" $RPM_BUILD_ROOT%{_datadir}/%{name}/tables \;
 
+# Remove obsolete .la files
+rm -f %{buildroot}%{_libdir}/*.la
+
 # Reset udpt file to final target
 cat udpt | sed -e 's|GRADSPREFIX|%{_prefix}|g' > $RPM_BUILD_ROOT%{_datadir}/%{name}/udpt
 

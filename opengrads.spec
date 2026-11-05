@@ -54,7 +54,7 @@ Requires:  libXaw3dXft libsx gadap
 The Grid Analysis and Display System (GrADS) is a tool for fast and easy access, manipulation, analysis, and visualization of Earth science data. GrADS has two data models for handling both gridded and station data, and supports all of the standard data file formats. GrADS uses a 5-Dimensional data environment: the four conventional dimensions (longitude, latitude, vertical level, and time) plus an optional fifth dimension for grids that is generally implemented but designed to be used for ensembles. Analysis operations are executed via algebraic expressions, which are evaluated recursively so that expressions may be nested. A rich set of built-in functions are provided, but users may also add their own functions as external plug-ins that may be written in any programming language. GrADS has a programmable interface (scripting language) that allows for sophisticated analysis and display applications. GrADS can be run interactively or in batch mode.
 
 %prep
-%setup -q
+%setup -q -n GrADS-%{version}
 
 %build
 
@@ -106,8 +106,8 @@ find data/tables -type f -exec install -p -m644 "{}" $RPM_BUILD_ROOT%{_datadir}/
 %{__install} -d -m755 $RPM_BUILD_ROOT%{_datadir}/%{name}/shapefiles
 %{__install} -p -m644 shapefiles/* $RPM_BUILD_ROOT%{_datadir}/%{name}/shapefiles
 
-# Rimuove il file libtool .la non necessario per evitare errori di compilazione RPM
-rm -vf %{buildroot}%{_libdir}/*.la
+# Remove obsolete .la files
+rm -f %{buildroot}%{_libdir}/*.la
 
 # Setting temporarily udpt target to build directory to make gex tests
 cat udpt | sed -e "s|GRADSPREFIX|$RPM_BUILD_ROOT%{_prefix}|g" > $RPM_BUILD_ROOT%{_datadir}/%{name}/udpt

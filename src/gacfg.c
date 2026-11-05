@@ -141,10 +141,6 @@ snprintf(cmd,255,"Config: v%s",GRADS_VERSION);
 #endif
 
 #if GRIB2==1
-/*
-   dvd 23 sep 2026, sostituita G2C_VERSION con G2_VERSION (1.6.0)
-   snprintf(cmd,255,"  +  GRIB2 interface ENABLED  %s \n",G2C_VERSION);
-*/
 /* g2clib >= 1.7 defines G2C_VERSION, older versions (1.6.0) G2_VERSION */
 #if defined(G2C_VERSION)
    snprintf(cmd,255,"  +  GRIB2 interface ENABLED  %s \n",G2C_VERSION);
