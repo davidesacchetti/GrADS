@@ -1,0 +1,40 @@
+Riepilogo delle modifiche: GrADS 2.2.5, ramo 2.2.5 in /opt/other/GrADS-2.2.5
+
+Sono 7 commit rispetto a upstream/master (il repository di Paolo), più un merge.
+
+1. 7ef5abd: widget su Cairo e sezioni 2D (5 novembre, sessione precedente)
+
+- src/gxX.c: il display Cairo ha di nuovo i widget che c'erano solo con X11: bottoni, rubber band, dropmenu con cascade, finestre di dialogo (query dialog) e screen save/show/free.
+- src/gafunc.c:
+  - collect accetta anche tutte le dimensioni fisse (si riferisce alla
+  dimensione Z che prima di questa modifica doveva essere variabile);
+  - coll2gr, con solo X variabile, restituisce una sezione 1-D. Così si possono fare sezioni oblique di variabili 2D e usare define sulle sezioni X-Z.
+- src/gacfg.c: compila anche con g2clib 1.6.0, che definisce G2_VERSION invece di G2C_VERSION.
+- src/gauser.c: piccoli ritocchi collegati a collect.
+- Versione 2.2.5 in configure.ac, src/VERSION, INSTALL, src/Makefile.in, grads.spec, opengrads.spec, ChangeLog e readme_dvd.txt.
+- udpt: in questo commit era finito per errore un file con percorsi fissi. È stato ripristinato in f5a01ad.
+
+2. 5bc973b: dropmenu stabili (src/gxX.c)
+
+- Spostando il mouse fuori dal menu aperto non si apre più il dropmenu che sta sotto il puntatore.
+- I sottomenu si aprono, e si chiudono, solo se il puntatore resta fermo circa 300 ms (GXWPDLY).
+- Il menu viene disegnato fuori schermo e copiato in un colpo solo, quindi non sfarfalla più.
+
+3. a1687d0: mappe mondiali e release 2.2.5-2
+
+- arpal/data/hres_world, lres_world, mres_world: nuove mappe, installate in /opt/grads/share/grads/.
+- grads.spec, opengrads.spec: release 2 e voce nel changelog.
+
+4. f5a01ad: correzione di udpt
+
+- udpt: ripristinato con il segnaposto GRADSPREFIX. I percorsi /root/rpmbuild/...grads-2.2.4 facevano fallire la build dell'RPM.
+
+5. b90d45d: menu che si bloccavano dopo molte selezioni (src/gxX.c)
+
+- Un widget ridisegnato con lo stesso numero ora riusa il suo posto nella lista degli oggetti cliccabili, che ha 512 posti. Prima la lista si riempiva e dopo circa 12 selezioni in gridview8.gs i dropmenu non si aprivano più.
+
+6. fdf1adc: release 2.2.5-3
+
+- grads.spec, opengrads.spec: release 3 e voce nel changelog. L'RPM corS/x86_64/grads-2.2.5-3.fc44.x86_64.rpm.
+
+7. 882b9b8: readme_dvd.txt (tuo, 10 novembre)
