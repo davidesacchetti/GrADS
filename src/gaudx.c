@@ -138,7 +138,7 @@ int gaudc (char *com_) {
         com = nxtwrd(com);
         com = nxtwrd(com); /* preserve case for file name */
         if ( com ) {
-          for(i=strlen(com)-1; i>0; i++) {
+          for(i=strlen(com)-1; i>0; i--) {
             if (com[i]!=' ') break;
             else             com[i]='\0';
           }
@@ -148,7 +148,7 @@ int gaudc (char *com_) {
             else        gaudx_append(Udx,udx_new); /* append it */
             return (0);
           } else {
-            sprintf(pout,"ERROR: could not load UDX table <%s>\n",com);
+            snprintf (pout,sizeof(pout),"ERROR: could not load UDX table <%s>\n",com);
             gaprnt(0,pout);
             return (1);  /* failed to load file */
           }
@@ -257,7 +257,7 @@ static gaudx_t * gaudx_create(char *filename) {
   if (cname) {
 
     /* Open the file */
-    sprintf (pout,"Loading User Defined Extensions table <%s> ... ",cname);
+    snprintf (pout,sizeof(pout),"Loading User Defined Extensions table <%s> ... ",cname);
     gaprnt (2,pout);
     cfile = fopen(cname,"r");
     if (cfile) {
@@ -278,8 +278,8 @@ static gaudx_t * gaudx_create(char *filename) {
               str = fgets(rec,256,cfile);
               if (str==NULL) break;
       }
-      rec[strlen(rec)-1] = '\0';
       if (str==NULL) break;
+      rec[strcspn(rec,"\r\n")] = '\0';
 
       argc = getargv(str, argv, 7);
       if ( argc == 0 ) continue; /* blank line */
@@ -351,17 +351,21 @@ static gaudx_t * gaudx_create(char *filename) {
 
 memerr:
   gaprnt(0,"Memory allocation error: user defined extensions\n");
+  if (udx && udx!=udx_prev) free (udx);   /* node not yet in the list */
+  if (udx_prev) gaudx_destroy(udx_prev);
+  fclose (cfile);
   return (gaudx_t *) NULL;
 
 fmterr:
   gaprnt(0,"Format error in user defined command table:\n");
-  sprintf (pout,"  Processing function name: <%s>, argc = %d \n",str,argc);
+  snprintf (pout,sizeof(pout),"  Processing function name: <%s>, argc = %d \n",str,argc);
   gaprnt (0,pout);
-  free (udx);
+  if (udx_prev) gaudx_destroy(udx_prev);  /* release the list built so far */
+  fclose (cfile);
   goto wname;
 
 wname:
-  sprintf (pout,"  File name is: %s\n",cname);
+  snprintf (pout,sizeof(pout),"  File name is: %s\n",cname);
   gaprnt (0,pout);
   return (gaudx_t *) NULL;
 
@@ -422,11 +426,11 @@ static void gaudx_header(char *descr, int which,int fmt) {
     title[i] = '\0';
     strcat(title,descr);
     if ( which == UDX_CMD ) {
-      sprintf(pout,"\n   Command   %-40s     Function@Library\n",title);
+      snprintf (pout,sizeof(pout),"\n   Command   %-40s     Function@Library\n",title);
       gaprnt (2,pout);
     }
     else if ( which == UDX_FUN ) {
-      sprintf(pout,"\n  Function   %-40s     Function@Library\n",title);
+      snprintf (pout,sizeof(pout),"\n  Function   %-40s     Function@Library\n",title);
       gaprnt (2,pout);
     }
     gaprnt (2,  " ----------- ---------------------------------------  --------------------------\n");
@@ -441,14 +445,14 @@ static void gaudx_summary (gaudx_t *udx, int which, int fmt) {
   while (udx) {
     if ( udx->type == which ) {
       if ( fmt==1 ) {
-        sprintf (pout," %12s -> %-12s from <%s>\n",
+        snprintf (pout,sizeof(pout)," %12s -> %-12s from <%s>\n",
                  udx->name, udx->func, udx->fname);
         gaprnt (2,pout);
       } else {
         if ( udx->name[0]==' ' ) {
           gaudx_header(udx->descr,which,fmt);
         } else {
-          sprintf (pout," %-11s %-40s %s@%s\n",
+          snprintf (pout,sizeof(pout)," %-11s %-40s %s@%s\n",
                    udx->name, udx->descr, udx->func, udx->flib);
           gaprnt (2,pout);
         }
@@ -502,7 +506,9 @@ static int gaudx_cmd (gaudx_t *udx, char *com, struct gacmn *pcm ) {
 
     /*  Parse command line arguments */
     cmd = strdup(com);
+    if ( !cmd ) return -1;
     argc = getargv(cmd,argv,255); /* parse command line */
+    if ( argc < 1 ) goto err;
 
     /* Look for the UDC */
     udx = gaudx_find(udx,argv[0],UDX_CMD);
@@ -513,7 +519,7 @@ static int gaudx_cmd (gaudx_t *udx, char *com, struct gacmn *pcm ) {
     if ( !udx->handle ) {
       udx->handle = dlopen (udx->fname, RTLD_LAZY);
       if (!udx->handle) {
-	sprintf (pout, "%s\n", dlerror());
+	snprintf (pout,sizeof(pout), "%s\n", dlerror());
 	gaprnt (0,pout);
 	goto err;
       }
@@ -524,7 +530,7 @@ static int gaudx_cmd (gaudx_t *udx, char *com, struct gacmn *pcm ) {
       dlerror();    /* Clear any existing error */
       *(void **) (&udx->cpntr) = dlsym(udx->handle, udx->func);
       if ((error = dlerror()) != NULL)  {
-	sprintf (pout, "%s\n", error);
+	snprintf (pout,sizeof(pout), "%s\n", error);
 	gaprnt (0,pout);
 	goto err;
       }
@@ -545,6 +551,7 @@ static int gaudx_cmd (gaudx_t *udx, char *com, struct gacmn *pcm ) {
     return rc;
 
  err:
+  free(cmd);
   return -1;
 
 }
@@ -564,7 +571,7 @@ static int gaudx_frun(gaudx_t *udx, struct gafunc *pfc, struct gastat *pst) {
     if ( !udx->handle ) {
       udx->handle = dlopen (udx->fname, RTLD_LAZY);
       if (!udx->handle) {
-	sprintf (pout, "%s\n", dlerror());
+	snprintf (pout,sizeof(pout), "%s\n", dlerror());
 	gaprnt (0,pout);
 	return -4;
       }
@@ -575,7 +582,7 @@ static int gaudx_frun(gaudx_t *udx, struct gafunc *pfc, struct gastat *pst) {
       dlerror();    /* Clear any existing error */
       *(void **) (&udx->fpntr) = dlsym(udx->handle, udx->func);
       if ((error = dlerror()) != NULL)  {
-	sprintf (pout, "%s\n", error);
+	snprintf (pout,sizeof(pout), "%s\n", error);
 	gaprnt (0,pout);
 	return -5;
       }
@@ -621,7 +628,7 @@ static int gaudx_fun (gaudx_t *udx, char *name,
     if ( !udx->handle ) {
       udx->handle = dlopen (udx->fname, RTLD_LAZY);
       if (!udx->handle) {
-	sprintf (pout, "%s\n", dlerror());
+	snprintf (pout,sizeof(pout), "%s\n", dlerror());
 	gaprnt (0,pout);
 	goto err;
       }
@@ -632,7 +639,7 @@ static int gaudx_fun (gaudx_t *udx, char *name,
       dlerror();    /* Clear any existing error */
       *(void **) (&udx->fpntr) = dlsym(udx->handle, udx->func);
       if ((error = dlerror()) != NULL)  {
-	sprintf (pout, "%s\n", error);
+	snprintf (pout,sizeof(pout), "%s\n", error);
 	gaprnt (0,pout);
 	goto err;
       }

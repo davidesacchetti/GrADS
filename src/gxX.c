@@ -857,7 +857,8 @@ long pendt, clost, deadline;
   /* Selection: 1-based item number; -1 for a cascade item without
      a selection in its sub-menu */
   dmsel[lvl] = itemold + 1;
-  if (itemold>-1 && p->ptrs[itemold]>-1 && dmsel[lvl+1]<1) dmsel[lvl] = -1;
+  /* (at the deepest level there is no sub-menu, and no dmsel[lvl+1]) */
+  if (itemold>-1 && p->ptrs[itemold]>-1 && (lvl>=3 || dmsel[lvl+1]<1)) dmsel[lvl] = -1;
 
   /* Remove the menu */
   c = cairo_create(surface);

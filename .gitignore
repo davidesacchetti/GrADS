@@ -5,3 +5,4 @@
 *.exe
 *.pyc
 *.so*
+autom4te.cache/
