@@ -38,3 +38,21 @@ Sono 7 commit rispetto a upstream/master (il repository di Paolo), più un merge
 - grads.spec, opengrads.spec: release 3 e voce nel changelog. L'RPM corS/x86_64/grads-2.2.5-3.fc44.x86_64.rpm.
 
 7. 882b9b8: readme_dvd.txt (tuo, 10 novembre)
+
+Aggiornamento dell'11 novembre: release 2.2.5-4 e 2.2.5-5
+
+8. 72bb978: menu al quarto livello, caricatore delle estensioni, autom4te.cache
+
+- src/gxX.c: per una voce con cascata in un menu di quarto livello non si legge più dmsel oltre la fine dell'array.
+- src/gaudx.c: messaggi limitati alla dimensione del buffer; corretto il taglio degli spazi finali nel nome della tabella; dalla riga letta si toglie solo il fine riga (prima l'ultima riga senza a capo perdeva un carattere); file chiuso e lista rilasciata nei rami di errore.
+- autom4te.cache tolta dal controllo di versione (è generata da autoconf) e aggiunta a .gitignore.
+
+9. 5fd3623: gradspy result con le funzioni di regridding
+
+- extensions/re/re.c, extensions/mf/libmf.c, extensions/ipc/libipc.c: la griglia risultato non inizializzava pfile; gradspy.result('re(...)') cadeva con segmentation fault. Con define + get funzionava già.
+- src/gauser.c (gadoexpr): le coordinate delle dimensioni variabili vengono dalla griglia risultato, quelle fisse dal file come prima. Per le espressioni normali il risultato è identico (verificato su 26 casi); per re e re2 le coordinate restituite a python sono quelle della griglia rigrigliata.
+- src/gradspy.c non è stato toccato: in questo progetto resta quello originale di GrADS.
+
+10. release 2.2.5-5
+
+- grads.spec, opengrads.spec: release 5 e voci nel changelog (2.2.5-4 e 2.2.5-5). ChangeLog e readme_dvd.txt aggiornati.

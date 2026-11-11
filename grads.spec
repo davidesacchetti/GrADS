@@ -19,7 +19,7 @@
 
 Name:           grads
 Version:        2.2.5
-Release:        3%{?dist}
+Release:        5%{?dist}
 Summary:        Tool for easy acces, manipulation, and visualization of data
 
 Group:          Applications/Engineering
@@ -154,6 +154,17 @@ cat udpt | sed -e 's|GRADSPREFIX|%{_prefix}|g' > $RPM_BUILD_ROOT%{_datadir}/%{na
 %endif
 
 %changelog
+* Wed Nov 11 2026 ARPAL Sistemi CMI <sistemi.cmi@arpal.liguria.it> - 2.2.5-5
+- gradspy 'result' with regridding functions (re, re2): no more crash
+  (result grid not bound to a file in re.c, libmf.c, libipc.c) and the
+  coordinates returned are those of the result grid (gadoexpr)
+* Wed Nov 11 2026 ARPAL Sistemi CMI <sistemi.cmi@arpal.liguria.it> - 2.2.5-4
+- Cairo display: no read past the end of the selection table for a
+  cascade item in a fourth level drop menu
+- User defined extensions (gaudx.c): messages limited to the buffer size,
+  fixed trimming of the table file name and of the table lines, resources
+  released on errors
+- autom4te.cache no longer under version control
 * Thu Nov 05 2026 ARPAL Sistemi CMI <sistemi.cmi@arpal.liguria.it> - 2.2.5-3
 - Cairo display: a widget drawn again reuses its slot in the list of
   displayed objects (drop menus no longer stop working after many redraws)
