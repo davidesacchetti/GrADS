@@ -1400,6 +1400,7 @@ int udf_put_ovals (char *name, struct gastat *pst, gaData_t fldout[], gaData_t *
 
   pgr = (struct gagrid *)malloc(sizeof(struct gagrid));
   if (pgr==NULL) goto merr;
+  pgr->pfile = NULL;   /* not a grid of a file: gradspy (gadoexpr) looks at this */
 
   /* Fill in and check values */
   pgr->alocf = 0;

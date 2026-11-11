@@ -8875,6 +8875,28 @@ gaint defpylev (gadouble *, struct gafile *, gaint);
 gaint defpylin (gadouble, gadouble, struct gafile *, gaint);
 
 
+/* Conversion info used by gadoexpr() for dimension dim (0-3) of a result grid:
+   grid-to-world conversion routine, its values and the linear flag.
+   They come from the grid when dim is one of its varying dimensions, 
+   otherwise (or if the grid does not carry them) from the file. */
+
+static void gapydim (struct gagrid *pgr, struct gafile *pfi, int dim, 
+		     gadouble (**conv) (gadouble *, gadouble), gadouble **vals, int *linr) {
+  *conv = pfi->gr2ab[dim];
+  *vals = pfi->grvals[dim];
+  *linr = pfi->linear[dim];
+  if (dim==pgr->idim && pgr->ivals!=NULL && (dim==3 || pgr->igrab!=NULL)) {
+    *conv = pgr->igrab;
+    *vals = pgr->ivals;
+    *linr = pgr->ilinr;
+  }
+  else if (dim==pgr->jdim && pgr->jvals!=NULL && (dim==3 || pgr->jgrab!=NULL)) {
+    *conv = pgr->jgrab;
+    *vals = pgr->jvals;
+    *linr = pgr->jlinr;
+  }
+}
+
 int gadoexpr (char *expr, struct pygagrid *pypgr) {
   struct gastat *pst;
   struct gafile *pfi;
@@ -8882,8 +8904,8 @@ int gadoexpr (char *expr, struct pygagrid *pypgr) {
   struct gagrid *pgr;
   struct dt dtim; 
   gadouble (*conv) (gadouble *, gadouble);
-  gadouble *g, *s, mynan;
-  int rc,i,vcnt,nvals;
+  gadouble *g, *s, *vals, mynan;
+  int rc,i,vcnt,nvals,linr;
   char *ch,*u;
   
   /* Initialize */
@@ -8981,6 +9003,9 @@ int gadoexpr (char *expr, struct pygagrid *pypgr) {
   pypgr->grid = pgr->grid;
 
   /* Get a suitable gafile structure so we can populate metadata in pypgr structure.
+     The world coordinates of the varying dimensions are taken from the result grid 
+     itself (see gapydim): a function may return a grid that is not the one of the 
+     file (e.g. regridding functions); the file is used for the fixed dimensions.
      pgr->pfile is set to NULL for functions tloop, eloop, s2g2d, and those that 
      call gagrvl (aave, mnmx, scorr), so we use the default file instead */
   if (pgr->pfile != NULL)
@@ -8989,10 +9014,10 @@ int gadoexpr (char *expr, struct pygagrid *pypgr) {
     pfi = pst->pfid;
 
   /* Longitude */
-  conv = pfi->gr2ab[0];
-  pypgr->xstrt = conv(pfi->grvals[0],pgr->dimmin[0]); /* initial world coordinate value */
-  if (pfi->linear[0]) 
-    pypgr->xincr = *(pfi->grvals[0]);                 /* valid grid increment */
+  gapydim (pgr,pfi,0,&conv,&vals,&linr);
+  pypgr->xstrt = conv(vals,pgr->dimmin[0]);           /* initial world coordinate value */
+  if (linr) 
+    pypgr->xincr = *vals;                             /* valid grid increment */
   else 
     pypgr->xincr = -1;                                /* negative grid increment */
   /* allocate memory for X coordinate values */
@@ -9005,17 +9030,17 @@ int gadoexpr (char *expr, struct pygagrid *pypgr) {
   s = pypgr->xvals;
   if (pypgr->xsz > 1) {                           
     for (i=pgr->dimmin[0]; i<=pgr->dimmax[0]; i++) {
-      *s = conv(pfi->grvals[0],(gadouble)i);
+      *s = conv(vals,(gadouble)i);
       s++;
     }
   } 
   else *s = mynan;
 
   /* Latitude */
-  conv = pfi->gr2ab[1];
-  pypgr->ystrt = conv(pfi->grvals[1],pgr->dimmin[1]); /* initial world coordinate value */
-  if (pfi->linear[1]) 
-    pypgr->yincr = *(pfi->grvals[1]);                 /* valid grid increment */
+  gapydim (pgr,pfi,1,&conv,&vals,&linr);
+  pypgr->ystrt = conv(vals,pgr->dimmin[1]);           /* initial world coordinate value */
+  if (linr) 
+    pypgr->yincr = *vals;                             /* valid grid increment */
   else 
     pypgr->yincr = -1;                                /* negative grid increment */
   /* allocate memory for Y coordinate values */
@@ -9028,7 +9053,7 @@ int gadoexpr (char *expr, struct pygagrid *pypgr) {
   s = pypgr->yvals;
   if (pypgr->ysz > 1) {                           
     for (i=pgr->dimmin[1]; i<=pgr->dimmax[1]; i++) {
-      *s = conv(pfi->grvals[1],(gadouble)i);
+      *s = conv(vals,(gadouble)i);
       s++;
     }
   } 
@@ -9040,15 +9065,15 @@ int gadoexpr (char *expr, struct pygagrid *pypgr) {
   s = pypgr->zvals; 
 
   if (pypgr->zsz > 1) {
-    conv = pfi->gr2ab[2];
-    pypgr->zstrt = conv(pfi->grvals[2],pgr->dimmin[2]); /* initial world coordinate value */
-    if (pfi->linear[2]) {
-      pypgr->zincr = *(pfi->grvals[2]);                 /* valid grid increment */
+    gapydim (pgr,pfi,2,&conv,&vals,&linr);
+    pypgr->zstrt = conv(vals,pgr->dimmin[2]);           /* initial world coordinate value */
+    if (linr) {
+      pypgr->zincr = *vals;                             /* valid grid increment */
     }
     else {    
       pypgr->zincr = -1;                                /* set negative grid increment */
       for (i=pgr->dimmin[2]; i<=pgr->dimmax[2]; i++) {
-	*s = conv(pfi->grvals[2],(gadouble)i);
+	*s = conv(vals,(gadouble)i);
 	s++;
       }
     }
@@ -9060,20 +9085,21 @@ int gadoexpr (char *expr, struct pygagrid *pypgr) {
   }
 
   /* Time */
-  gr2t (pfi->grvals[3],pgr->dimmin[3],&dtim);    /* get the initial time metadata */
+  gapydim (pgr,pfi,3,&conv,&vals,&linr);
+  gr2t (vals,pgr->dimmin[3],&dtim);              /* get the initial time metadata */
   pypgr->syr = dtim.yr;
   pypgr->smo = dtim.mo;
   pypgr->sdy = dtim.dy;
   pypgr->shr = dtim.hr;
   pypgr->smn = dtim.mn;
   pypgr->tcal = pfi->calendar;
-  if (*(pfi->grvals[3]+5)!=0) {
+  if (*(vals+5)!=0) {
     pypgr->ttyp = 0; /* increment is months  */
-    pypgr->tincr = *(pfi->grvals[3]+5); 
+    pypgr->tincr = *(vals+5); 
   }
   else {
     pypgr->ttyp = 1; /* increment is minutes */
-    pypgr->tincr = *(pfi->grvals[3]+6); 
+    pypgr->tincr = *(vals+6); 
   }
   /* Ensemble */
   pypgr->estrt = pgr->dimmin[4]; 

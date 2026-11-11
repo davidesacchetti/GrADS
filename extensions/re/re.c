@@ -772,6 +772,7 @@ int ffre(struct gafunc *pfc, struct gastat *pst) {
     gaprnt_(2,pout);
     return 1;
   }
+  outpgr->pfile = NULL;   /* not a grid of a file: gradspy (gadoexpr) looks at this */
   outpgr->ilinr = 1;
   outpgr->jlinr = 1;
   outpgr->idim = 0;

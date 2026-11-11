@@ -696,6 +696,7 @@ int f_Load (struct gafunc *pfc, struct gastat *pst) {
 
   pgr = (struct gagrid *)malloc(sizeof(struct gagrid));
   if (pgr==NULL) goto merr;
+  pgr->pfile = NULL;   /* not a grid of a file: gradspy (gadoexpr) looks at this */
 
   /* Fill in and check values */
 
