@@ -627,6 +627,38 @@ gaint i;
     *ypos = -999.9;
     return;
   }
+  if (flag==3) {
+    /* Current pointer position, no button press needed.
+       mbtn is the button being held down (0 if none), type is 0.
+       Pending events are handled first (so that the window size is current);
+       any button press stays in the queue for a later request. */
+    Window qroot,qchild;
+    int qrx,qry,qwx,qwy;
+    unsigned int qmask;
+    gxdeve(0);
+    if (!XQueryPointer(display,win,&qroot,&qchild,&qrx,&qry,&qwx,&qwy,&qmask)) {
+      *xpos = -999.9;        /* pointer is on another screen */
+      *ypos = -999.9;
+      *mbtn = -1;
+      *type = -1;
+      return;
+    }
+    if (qwx<0 || qwx>=width || qwy<0 || qwy>=height) {
+      *xpos = -999.9;        /* pointer is outside the window */
+      *ypos = -999.9;
+      *mbtn = -1;
+      *type = -1;
+      return;
+    }
+    *xpos = xsize*((gadouble)qwx)/width;
+    *ypos = ysize - ysize*((gadouble)qwy)/height;
+    if      (qmask & Button1Mask) *mbtn = 1;
+    else if (qmask & Button2Mask) *mbtn = 2;
+    else if (qmask & Button3Mask) *mbtn = 3;
+    else *mbtn = 0;
+    *type = 0;
+    return;
+  }
   gxdeve(flag);
   if (evbase==NULL) {
     *xpos = -999.9;

@@ -334,10 +334,16 @@ int main (int argc, char *argv[])  {
   signal(2,gasig);                      /* Trap cntrl c */
   
 #if USEGUI == 1
-  if (!ipcflg) 
-    gagui_main (argc, argv);   /*ams Initializes GAGUI, and if the environment
+  if (!ipcflg) {
+    /* Hand the X toolkit the program name only: GrADS options are not Xt options, 
+       and Xt would take e.g. "-d Cairo" as "-display Cairo" and abort. */
+    static char *guiargv[2];
+    guiargv[0] = argv[0];
+    guiargv[1] = NULL;
+    gagui_main (1, guiargv);   /*ams Initializes GAGUI, and if the environment
 				 variable GAGUI is set it starts a GUI
 				 script. Otherwise, it just returns. ams*/
+  }
 #endif
   if (ipcflg) printf("\n<RC> %d </RC>\n</IPC>\n",rc);
   

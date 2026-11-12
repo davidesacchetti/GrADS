@@ -4222,6 +4222,7 @@ gadouble minvals[4], maxvals[4],dval;
     i = 1;
     if ((arg = nxtwrd (arg)) != NULL) {
       if (cmpwrd(arg,"nowait")) i = 0;
+      else if (cmpwrd(arg,"pointer")) i = 3;   /* current pointer position, no click */
     }
     dsubs->gxdbtn (i, &x, &y, &i, &etype, info, rinfo);
     if (etype<1) {
