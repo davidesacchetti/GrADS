@@ -1961,9 +1961,9 @@ gaint i;
        mbtn is the button being held down (0 if none), type is 0.
        Pending events are handled first (so that the window size is current);
        any button press stays in the queue for a later request. */
-    Window qroot,qchild;
-    int qrx,qry,qwx,qwy;
-    unsigned int qmask;
+    Window qroot,qchild,qtop,qpar,qr2,qover,*qkids;
+    int qrx,qry,qwx,qwy,qi,qj;
+    unsigned int qmask,qm2,qnk;
     gxdeve(0);
     if (!XQueryPointer(display,win,&qroot,&qchild,&qrx,&qry,&qwx,&qwy,&qmask)) {
       *xpos = -999.9;        /* pointer is on another screen */
@@ -1972,7 +1972,18 @@ gaint i;
       *type = -1;
       return;
     }
-    if (qwx<0 || qwx>=width || qwy<0 || qwy>=height) {
+    /* The pointer must also be over our own top-level window: over another
+       window, or (under XWayland) over anything that is not an X window, the
+       server still reports the last position seen inside the window. */
+    qtop = win;
+    while (XQueryTree(display,qtop,&qr2,&qpar,&qkids,&qnk)) {
+      if (qkids) XFree(qkids);
+      if (qpar==qr2 || qpar==None) break;
+      qtop = qpar;
+    }
+    qover = None;
+    XQueryPointer(display,qroot,&qr2,&qover,&qrx,&qry,&qi,&qj,&qm2);
+    if (qover!=qtop || qwx<0 || qwx>=width || qwy<0 || qwy>=height) {
       *xpos = -999.9;        /* pointer is outside the window */
       *ypos = -999.9;
       *mbtn = -1;
