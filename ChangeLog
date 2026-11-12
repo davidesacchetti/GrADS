@@ -26,6 +26,16 @@
       and the coordinates returned are those of the result grid (gadoexpr).
     * autom4te.cache is no longer under version control.
 
+    Updates and fixes (2026-11-12, release 2.2.5-6):
+    * 'q pos pointer' (or 'q bpos pointer') returns at once the current
+      position of the mouse pointer in page units, with no click required
+      (Cairo and X11 displays). mbtn is the button being held down (0 if
+      none), class is 0; outside the graphics window the result is
+      -999.9 -999.9 -1 -1. Pending clicks stay queued.
+    * The -d option (graphics display back end, e.g. '-d Cairo', '-d X11')
+      works again in a build with the Athena GUI: the X toolkit took it as
+      '-display' and stopped with "Can't open display".
+
 2025-11-19 Version 2.2.4
 
     Updates:

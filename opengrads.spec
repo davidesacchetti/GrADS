@@ -18,7 +18,7 @@
 #
 Name:           grads
 Version:        2.2.5
-Release:        5%{?dist}
+Release:        6%{?dist}
 Summary:        Tool for easy acces, manipulation, and visualization of data
 
 Group:          Applications/Engineering
@@ -187,6 +187,12 @@ cat udpt | sed -e 's|GRADSPREFIX|%{_prefix}|g' > $RPM_BUILD_ROOT%{_datadir}/%{na
 %endif
 
 %changelog
+* Thu Nov 12 2026 ARPAL Sistemi CMI <sistemi.cmi@arpal.liguria.it> - 2.2.5-6
+- 'q pos pointer' ('q bpos pointer'): current position of the mouse pointer
+  in page units with no click required (Cairo and X11 displays); outside
+  the graphics window the result is -999.9 -999.9 -1 -1
+- The -d option (graphics display back end) works again with the Athena
+  GUI: the X toolkit took it as -display ("Can't open display")
 * Wed Nov 11 2026 ARPAL Sistemi CMI <sistemi.cmi@arpal.liguria.it> - 2.2.5-5
 - gradspy 'result' with regridding functions (re, re2): no more crash
   (result grid not bound to a file in re.c, libmf.c, libipc.c) and the

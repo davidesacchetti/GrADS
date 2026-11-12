@@ -56,3 +56,16 @@ Aggiornamento dell'11 novembre: release 2.2.5-4 e 2.2.5-5
 10. release 2.2.5-5
 
 - grads.spec, opengrads.spec: release 5 e voci nel changelog (2.2.5-4 e 2.2.5-5). ChangeLog e readme_dvd.txt aggiornati.
+
+Aggiornamento del 12 novembre: release 2.2.5-6
+
+11. 6c3c48a: q pos pointer e opzione -d
+
+- src/gxX.c, src/gxX11.c (gxdbtn, flag 3), src/gauser.c: 'q pos pointer' (o 'q bpos pointer') restituisce subito la posizione corrente del mouse in coordinate di pagina, senza attendere un click. Il formato è quello di q pos fuori dai widget (x y mbtn class): mbtn è il tasto tenuto premuto (0 se nessuno), class è 0. Fuori dalla finestra grafica, in batch o con il puntatore su un altro schermo restituisce -999.9 -999.9 -1 -1. I click in coda non vengono consumati e restano per il q pos successivo.
+- src/grads.c: alla GUI Athena viene passato solo il nome del programma. Prima riceveva tutta la riga di comando e Xt interpretava "-d Cairo" o "-d X11" come "-display", terminando con "Can't open display". Ora -d sceglie il backend grafico come previsto; -g continua a valere per la finestra grafica.
+- doc/gradcomdqpos.html: documentato l'argomento pointer.
+- Provato su display virtuale (Xvfb) con entrambi i backend, anche con GAGUI.
+
+12. release 2.2.5-6
+
+- grads.spec, opengrads.spec: release 6 e voce nel changelog. ChangeLog e readme_dvd.txt aggiornati.
