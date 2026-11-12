@@ -157,7 +157,8 @@ cat udpt | sed -e 's|GRADSPREFIX|%{_prefix}|g' > $RPM_BUILD_ROOT%{_datadir}/%{na
 * Thu Nov 12 2026 ARPAL Sistemi CMI <sistemi.cmi@arpal.liguria.it> - 2.2.5-6
 - 'q pos pointer' ('q bpos pointer'): current position of the mouse pointer
   in page units with no click required (Cairo and X11 displays); outside
-  the graphics window the result is -999.9 -999.9 -1 -1
+  the graphics window the result is -999.9 -999.9 -1 -1 (also under
+  XWayland, where the server keeps reporting the last position seen inside)
 - The -d option (graphics display back end) works again with the Athena
   GUI: the X toolkit took it as -display ("Can't open display")
 * Wed Nov 11 2026 ARPAL Sistemi CMI <sistemi.cmi@arpal.liguria.it> - 2.2.5-5

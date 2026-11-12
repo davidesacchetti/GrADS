@@ -69,3 +69,9 @@ Aggiornamento del 12 novembre: release 2.2.5-6
 12. release 2.2.5-6
 
 - grads.spec, opengrads.spec: release 6 e voce nel changelog. ChangeLog e readme_dvd.txt aggiornati.
+
+13. d01e36b: q pos pointer fuori dalla finestra sotto XWayland (sempre release 2.2.5-6)
+
+- src/gxX.c, src/gxX11.c: sotto XWayland, quando il puntatore esce dalla finestra, il server continua a restituire l'ultima posizione vista all'interno, e q pos pointer dava coordinate sul bordo invece di -999.9. Ora gxdbtn verifica anche che il puntatore sia sopra la finestra top-level di GrADS; altrimenti restituisce -999.9 -999.9 -1 -1. Vale anche se il puntatore è sopra un'altra finestra che copre quella di GrADS.
+- La release resta 2.2.5-6: l'RPM è stato ricostruito con lo stesso numero. Dove la -6 precedente è già installata serve "dnf reinstall" con il percorso dell'RPM.
+- ChangeLog, grads.spec, opengrads.spec: voce 2.2.5-6 completata.
