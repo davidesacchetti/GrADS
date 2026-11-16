@@ -1,10 +1,15 @@
 % installare tutte le dipendenze presenti su ../GRADS-DEPENDENCIES (vedi i vari readme_dvd.txt)
 % gadap-2.0.2  libsx-2.08  libXaw3dXft-1.6.4 are needed
 
-% la directory del progetto deve chiamarsi GrADS-<versione> (gli spec fanno %setup -n GrADS-%{version})
+% i sorgenti dell'RPM sono la punta del branch 2.2.5 del fork (Source0 degli spec): vanno riscaricati a ogni release,
+% altrimenti l'RPM prende il numero nuovo ma contiene il codice vecchio
 # cd ..
 # rm /root/rpmbuild/SOURCES/*
-# tar --exclude=.git -cvzf /root/rpmbuild/SOURCES/v2.2.5.tar.gz GrADS-2.2.5
+# curl -L -o /root/rpmbuild/SOURCES/2.2.5.tar.gz https://github.com/davidesacchetti/GrADS/archive/refs/heads/2.2.5.tar.gz
+% (in alternativa, con rpmdevtools: spectool -g -f -R GrADS-2.2.5/opengrads.spec)
+% per provare modifiche non ancora nel push, dalla directory del progetto:
+% git archive --prefix=GrADS-2.2.5/ -o /root/rpmbuild/SOURCES/2.2.5.tar.gz HEAD
+% una release si fa con ./release.sh <N> (vedi i commenti in testa allo script)
 
 # dnf install Xaw3d-devel cairo-devel g2clib-devel hdf hdf-devel hdf5-devel jasper-devel libXaw-devel libgeotiff-devel ncurses-devel netcdf-devel readline-devel shapelib-devel udunits2-devel
 

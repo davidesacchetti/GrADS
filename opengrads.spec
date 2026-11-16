@@ -18,8 +18,7 @@
 #
 Name:           grads
 Version:        2.2.5
-%global relnum 6
-Release:        %{relnum}%{?dist}
+Release:        6%{?dist}
 Summary:        Tool for easy acces, manipulation, and visualization of data
 
 Group:          Applications/Engineering
@@ -27,9 +26,9 @@ Group:          Applications/Engineering
 License:        GPLv2 and MIT
 URL:            http://http://cola.gmu.edu/grads
 
-# GrADS sources: one git tag per package release (v<version>-<release>),
-# so the tarball always matches the release being built
-Source0:        https://github.com/davidesacchetti/GrADS/archive/refs/tags/v%{version}-%{relnum}.tar.gz
+# GrADS sources: tip of the branch named after the version (no tag per release).
+# The tarball must be downloaded again at every release: spectool -g -f -R <spec>
+Source0:        https://github.com/davidesacchetti/GrADS/archive/refs/heads/%{version}.tar.gz
 
 BuildRequires:  gcc gcc-c++ gcc-gfortran automake autoconf libtool make which pcre-devel
 BuildRequires:  jasper-devel cairo-devel
@@ -56,7 +55,7 @@ Requires:  libXaw3dXft libsx gadap
 The Grid Analysis and Display System (GrADS) is a tool for fast and easy access, manipulation, analysis, and visualization of Earth science data. GrADS has two data models for handling both gridded and station data, and supports all of the standard data file formats. GrADS uses a 5-Dimensional data environment: the four conventional dimensions (longitude, latitude, vertical level, and time) plus an optional fifth dimension for grids that is generally implemented but designed to be used for ensembles. Analysis operations are executed via algebraic expressions, which are evaluated recursively so that expressions may be nested. A rich set of built-in functions are provided, but users may also add their own functions as external plug-ins that may be written in any programming language. GrADS has a programmable interface (scripting language) that allows for sophisticated analysis and display applications. GrADS can be run interactively or in batch mode.
 
 %prep
-%setup -q -n GrADS-%{version}-%{relnum}
+%setup -q -n GrADS-%{version}
 
 %build
 
