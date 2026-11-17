@@ -38,6 +38,8 @@ gaint ffDVDbterp (struct gafunc *pfc, struct gastat *pst);
 gaint ffDVDraigrid (struct gafunc *pfc, struct gastat *pst);
 gaint ffDVDshift (struct gafunc *pfc, struct gastat *pst);
 gaint ffDVDtimeShift (struct gafunc *pfc, struct gastat *pst);
+gaint ffDVDbilin (struct gafunc *pfc, struct gastat *pst);
+gaint ffDVDbicub (struct gafunc *pfc, struct gastat *pst);
 
 /* prototyping */
 int DVDfindOffset(gadouble, gadouble, gadouble);
@@ -748,6 +750,243 @@ err:
 
 /* -------------------------------------------------------- */
 /*
+  dvd - Interpolazione in un punto lon,lat
+
+  bilin(expr,lon,lat)   bilineare, dai 4 punti griglia attorno
+  bicub(expr,lon,lat)   bicubica, dai 16 punti griglia attorno
+
+  lon e lat devono essere fissi nell'ambiente; le altre dimensioni
+  (livello, tempo, ensemble) possono variare e il risultato varia come loro,
+  ad esempio un profilo verticale se varia z.
+  expr viene valutata nei punti griglia che circondano lon,lat, con lon e
+  lat fissati ogni volta su un punto griglia, e i risultati sono combinati
+  con pesi separabili wx(i)*wy(j):
+    x = posizione di lon in unita' griglia, i0 = floor(x), fx = x-i0
+    y = posizione di lat in unita' griglia, j0 = floor(y), fy = y-j0
+  bilineare, punti i0..i0+1:  w(i0) = 1-fx, w(i0+1) = fx
+  bicubica, punti i0-1..i0+2: kernel cubico di Keys (a=-0.5, Catmull-Rom):
+    passa per i punti griglia e riproduce esattamente i campi lineari
+  I punti con peso nullo non vengono valutati (lon o lat esattamente su un
+  punto griglia, anche sul bordo del dominio).
+  bilin: se uno dei punti con peso non nullo e' undef, il risultato e' undef.
+  bicub: se manca uno dei 16 punti (undef o fuori dal dominio, ad esempio
+  vicino al bordo) in quell'elemento si usa la bilineare.
+  La griglia di riferimento e' quella del file della prima variabile di expr
+  (es. t.2 -> file 2, una variabile definita con define -> la sua griglia),
+  altrimenti quella del file di default.
+*/
+
+/* pesi lungo un asse: w[0..3] per i punti i0-1, i0, i0+1, i0+2 */
+static void DVDinterpWeights(gadouble f, gaint cubic, gadouble *w) {
+  if (cubic) {
+    w[0] = ((-0.5*f + 1.0)*f - 0.5)*f;
+    w[1] = (1.5*f - 2.5)*f*f + 1.0;
+    w[2] = ((-1.5*f + 2.0)*f + 0.5)*f;
+    w[3] = (0.5*f - 0.5)*f*f;
+  } else {
+    w[0] = 0.0;
+    w[1] = 1.0 - f;
+    w[2] = f;
+    w[3] = 0.0;
+  }
+}
+
+gaint ffDVDinterp (struct gafunc *pfc, struct gastat *pst, gaint cubic) {
+  struct gafile *pfi;
+  struct gagrid *res=NULL, *pgr;
+  gadouble lon, lat, xg, yg, fx, fy, w, wl;
+  gadouble dmin0, dmax0, dmin1, dmax1;
+  gadouble wx[4], wy[4], lx[4], ly[4];
+  gadouble *lsum=NULL;
+  char *lok=NULL, *cok=NULL;
+  gadouble (*conv) (gadouble *, gadouble);
+  gaint i0, j0, a, b, i, j, n, siz=0, rc, first=1, error=0, inner;
+  char *fname = cubic ? "BICUB" : "BILIN";
+
+  if (pfc->argnum!=3) {
+    sprintf (pout,"Error from %s: Three arguments expected\n  usage: %s(expr,lon,lat)\n",
+             fname, cubic ? "bicub" : "bilin");
+    gaprnt (0,pout);
+    return (1);
+  }
+  if (valprs(pfc->argpnt[1],&lon)==NULL) {
+    sprintf (pout,"Error from %s: Expecting arg2: %s to be a longitude\n",fname,pfc->argpnt[1]);
+    gaprnt (0,pout);
+    return (1);
+  }
+  if (valprs(pfc->argpnt[2],&lat)==NULL) {
+    sprintf (pout,"Error from %s: Expecting arg3: %s to be a latitude\n",fname,pfc->argpnt[2]);
+    gaprnt (0,pout);
+    return (1);
+  }
+
+  /* lon e lat fissi: il risultato varia solo nelle altre dimensioni */
+  if (pst->idim==0 || pst->idim==1 || pst->jdim==0 || pst->jdim==1) {
+    sprintf (pout,"Error from %s: lon and lat must be fixed (e.g. set x 1, set y 1)\n",fname);
+    gaprnt (0,pout);
+    return (1);
+  }
+
+  /* griglia di riferimento */
+  pfi = getfile(pfc->argpnt[0],pst);
+  if (pfi==NULL) return (1);
+  if (pfi->type==2 || pfi->type==3) {
+    sprintf (pout,"Error from %s: The 1st argument must be a grid expression\n",fname);
+    gaprnt (0,pout);
+    return (1);
+  }
+
+  /* posizione in unita' griglia e pesi */
+  conv = pfi->ab2gr[0];
+  xg = conv(pfi->abvals[0],lon);
+  conv = pfi->ab2gr[1];
+  yg = conv(pfi->abvals[1],lat);
+  i0 = (gaint) floor(xg);  fx = xg - i0;
+  j0 = (gaint) floor(yg);  fy = yg - j0;
+  if (fx < FUZZ_SCALE) fx = 0.0;
+  if (fx > 1.0-FUZZ_SCALE) { i0++; fx = 0.0; }
+  if (fy < FUZZ_SCALE) fy = 0.0;
+  if (fy > 1.0-FUZZ_SCALE) { j0++; fy = 0.0; }
+  DVDinterpWeights(fx, cubic, wx);
+  DVDinterpWeights(fy, cubic, wy);
+  DVDinterpWeights(fx, 0, lx);
+  DVDinterpWeights(fy, 0, ly);
+
+  if (mfcmn.warnflg > 0) {
+    sprintf (pout,"%s: lon %g lat %g -> x %g y %g (i0 %d fx %g, j0 %d fy %g)\n",
+             fname,lon,lat,xg,yg,i0,fx,j0,fy);
+    gaprnt (2,pout);
+  }
+
+  /* l'ambiente lon/lat viene ripristinato alla fine */
+  dmin0 = pst->dmin[0]; dmax0 = pst->dmax[0];
+  dmin1 = pst->dmin[1]; dmax1 = pst->dmax[1];
+
+  for (b=0; b<4; b++) {
+    for (a=0; a<4; a++) {
+      w = wx[a]*wy[b];
+      if (w == 0.0) continue;
+      i = i0 + a - 1;
+      j = j0 + b - 1;
+      inner = (a==1 || a==2) && (b==1 || b==2);
+      wl = inner ? lx[a]*ly[b] : 0.0;
+
+      /* bicubica: un punto esterno fuori dal dominio non si valuta,
+         gli elementi ripiegano sulla bilineare */
+      if (!inner && ((!pfi->wrap && (i<1 || i>pfi->dnum[0])) || j<1 || j>pfi->dnum[1])) {
+        if (!first) for (n=0; n<siz; n++) cok[n] = 0;
+        else cubic = -1;   /* segnala: cubica gia' invalida ovunque */
+        continue;
+      }
+
+      conv = pfi->gr2ab[0];
+      pst->dmin[0] = pst->dmax[0] = conv(pfi->grvals[0],(gadouble)i);
+      conv = pfi->gr2ab[1];
+      pst->dmin[1] = pst->dmax[1] = conv(pfi->grvals[1],(gadouble)j);
+
+      rc = gaexpr(pfc->argpnt[0],pst);
+      if (rc) { error=1; goto err; }
+      if (pst->type!=1) {
+        sprintf (pout,"Error from %s: The 1st argument is not a grid expression\n",fname);
+        gaprnt (0,pout);
+        gafree (pst);
+        error=1; goto err;
+      }
+      pgr = pst->result.pgr;
+      pst->result.pgr = NULL;
+
+      if (first) {
+        /* il primo punto valutato fa da contenitore del risultato */
+        res = pgr;
+        siz = res->isiz * res->jsiz;
+        if (cubic) {
+          lsum = (gadouble *) malloc(sizeof(gadouble)*siz);
+          lok  = (char *) malloc(siz);
+          cok  = (char *) malloc(siz);
+          if (lsum==NULL || lok==NULL || cok==NULL) {
+            gaprnt (0,"Error from BICUB: memory allocation error\n");
+            error=1; goto err;
+          }
+          for (n=0; n<siz; n++) {
+            lok[n] = inner ? res->umask[n] : 1;   /* lok conta solo i 4 punti interni */
+            cok[n] = (cubic>0) ? res->umask[n] : 0;
+            lsum[n] = res->umask[n] ? wl*res->grid[n] : 0.0;
+          }
+        }
+        for (n=0; n<siz; n++)
+          if (res->umask[n]) res->grid[n] *= w;
+        first = 0;
+        continue;
+      }
+
+      if (pgr->isiz!=res->isiz || pgr->jsiz!=res->jsiz) {
+        sprintf (pout,"Error from %s: grids at the surrounding points differ in size\n",fname);
+        gaprnt (0,pout);
+        gagfre (pgr);
+        error=1; goto err;
+      }
+      if (cubic) {
+        for (n=0; n<siz; n++) {
+          if (pgr->umask[n]) {
+            if (cok[n]) res->grid[n] += w * pgr->grid[n];
+            if (inner && lok[n]) lsum[n] += wl * pgr->grid[n];
+          } else {
+            cok[n] = 0;
+            if (inner) lok[n] = 0;
+          }
+        }
+      } else {
+        for (n=0; n<siz; n++) {
+          if (res->umask[n] && pgr->umask[n]) res->grid[n] += w * pgr->grid[n];
+          else res->umask[n] = 0;
+        }
+      }
+      gagfre (pgr);
+    }
+  }
+
+  if (res==NULL) {   /* non dovrebbe succedere: il punto i0,j0 ha sempre peso */
+    sprintf (pout,"Error from %s: no grid point evaluated\n",fname);
+    gaprnt (0,pout);
+    error=1; goto err;
+  }
+
+  /* bicubica dove ci sono tutti i punti, altrimenti bilineare, altrimenti undef */
+  if (cubic) {
+    for (n=0; n<siz; n++) {
+      if (cok[n]) res->umask[n] = 1;
+      else if (lok[n]) { res->grid[n] = lsum[n]; res->umask[n] = 1; }
+      else res->umask[n] = 0;
+    }
+  }
+  for (n=0; n<siz; n++)
+    if (!res->umask[n]) res->grid[n] = res->undef;
+
+err:
+  pst->dmin[0] = dmin0; pst->dmax[0] = dmax0;
+  pst->dmin[1] = dmin1; pst->dmax[1] = dmax1;
+  if (lsum!=NULL) free(lsum);
+  if (lok!=NULL) free(lok);
+  if (cok!=NULL) free(cok);
+  if (error) {
+    if (res!=NULL) gagfre (res);
+    return (1);
+  }
+  pst->result.pgr = res;
+  pst->type = 1;
+  return (0);
+}
+
+gaint ffDVDbilin (struct gafunc *pfc, struct gastat *pst) {
+  return ffDVDinterp (pfc, pst, 0);
+}
+
+gaint ffDVDbicub (struct gafunc *pfc, struct gastat *pst) {
+  return ffDVDinterp (pfc, pst, 1);
+}
+
+/* -------------------------------------------------------- */
+/*
   dvd - funzione di collegamento tra grads e questa libreria
 */
 int f_dvd (struct gafunc *pfc, struct gastat *pst) {
@@ -759,6 +998,8 @@ int f_dvd (struct gafunc *pfc, struct gastat *pst) {
      else if ( strcmp ( "raigrid" , name) == 0 ) rc = ffDVDraigrid ( pfc, pst );
      else if ( strcmp ( "shift" , name) == 0 ) rc = ffDVDshift ( pfc, pst );
      else if ( strcmp ( "tshift" , name) == 0 ) rc = ffDVDtimeShift ( pfc, pst );
+     else if ( strcmp ( "bilin" , name) == 0 ) rc = ffDVDbilin ( pfc, pst );
+     else if ( strcmp ( "bicub" , name) == 0 ) rc = ffDVDbicub ( pfc, pst );
      else {
        sprintf(pout,"Function '%s' not found in libdvd!\n" , name);
        gaprnt(0,pout);
@@ -985,6 +1226,14 @@ display B<raigrid>(I<EXPR>,I<radius>) -  expands binned data using 1/r2 weights
 =item
 
 display B<shift>(I<EXPR>,I<Xshift>,I<Yshift>) -  shift EXPR by Xshift in X and Yshift in Y
+
+=item
+
+display B<bilin>(I<EXPR>,I<lon>,I<lat>) -  bilinear interpolation of EXPR at lon,lat from the 4 surrounding grid points; lon and lat must be fixed, the result varies like the other dimensions (e.g. a vertical profile)
+
+=item
+
+display B<bicub>(I<EXPR>,I<lon>,I<lat>) -  bicubic (Keys/Catmull-Rom) interpolation of EXPR at lon,lat from the 16 surrounding grid points; falls back to bilinear where one of them is missing (e.g. near the domain border)
 
 =back
 

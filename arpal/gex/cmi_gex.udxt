@@ -15,6 +15,8 @@
   udf  0  raigrid    f_dvd               ^libdvd.gex   "rain 1/(r^2) averaging by davide"
   udf  0  shift      f_dvd               ^libdvd.gex   "shift(grid,xshift,yshift) by davide"
   udf  0  tshift     f_dvd               ^libdvd.gex   "tshift(grid,minutes_shift) by davide"
+  udf  0  bilin      f_dvd               ^libdvd.gex   "bilin(expr,lon,lat) bilinear interpolation at a point by davide"
+  udf  0  bicub      f_dvd               ^libdvd.gex   "bicub(expr,lon,lat) bicubic interpolation at a point by davide"
 
 # libshell:
   udc  0  shell      c_shell             ^libshell.gex "return output of shell cmd by davide"
