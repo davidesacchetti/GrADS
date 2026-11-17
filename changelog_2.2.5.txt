@@ -87,3 +87,19 @@ Aggiornamento del 16 novembre (sempre release 2.2.5-6)
 - release.sh (nuovo, nella radice del progetto): ./release.sh <N> controlla che le voci <versione>-<N> ci siano nei %changelog dei due spec e in ChangeLog, imposta Release nei due spec e in readme_dvd.txt, chiede conferma, fa commit e push e verifica che il tarball scaricato da Source0 sia uguale al commit. -n fa solo i controlli, -c solo la verifica del tarball. Non crea tag.
 - readme_dvd.txt: la preparazione del tarball con tar è sostituita dal download da Source0.
 - ChangeLog, grads.spec, opengrads.spec: voce 2.2.5-6 completata.
+
+Aggiornamento del 17 novembre: release 2.2.5-7
+
+15. 3f5942e: bilin e bicub in libdvd.gex (estensioni ARPAL)
+
+- arpal/gex/libdvd.c: bilin(expr,lon,lat) interpola expr nel punto lon,lat dai 4 punti griglia attorno (bilineare); bicub(expr,lon,lat) dai 16 punti attorno, con il kernel cubico di Keys (Catmull-Rom), che passa per i punti griglia e riproduce esattamente i campi lineari e quadratici.
+- lon e lat devono essere fissi nell'ambiente; il risultato varia come le altre dimensioni (profilo verticale con set lev, serie temporale, z-t, valore singolo) e si plotta o si usa in define come un campo GrADS. Le due funzioni valutano expr nei punti griglia attorno, con lon e lat fissati ogni volta su un punto griglia, e combinano i risultati con i pesi; i punti con peso nullo (lon o lat esattamente su un punto griglia, anche sul bordo) non vengono valutati.
+- bilin: se manca uno dei punti con peso non nullo il risultato è undef. bicub: se manca uno dei 12 punti esterni (fuori dominio, ad esempio entro una cella dal bordo, oppure undef) in quell'elemento usa la bilineare; se manca uno dei 4 interni è undef.
+- Griglia di riferimento: quella del file della prima variabile di expr (t.2, variabili definite), altrimenti il file di default. Le griglie globali fanno il giro in longitudine.
+- arpal/gex/cmi_gex.udxt: aggiunte le due funzioni.
+- Provato su dati sintetici con campi lineari e quadratici (valori esatti), punti griglia, bordo, undef, wrap, altri file e define; la memoria non cresce con le chiamate ripetute.
+- Installazione senza RPM, come fatto su questo host: copiare libdvd.gex e cmi_gex.udxt in /opt/grads/share/grads/gex e rigenerare udxt con cat /opt/grads/share/grads/gex/*.udxt > udxt.
+
+16. release 2.2.5-7
+
+- grads.spec, opengrads.spec: release 7 e voce nel changelog. ChangeLog e readme_dvd.txt aggiornati. Le due funzioni sono nell'RPM costruito con opengrads.spec, che compila le estensioni ARPAL; grads.spec non le compila.

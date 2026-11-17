@@ -44,6 +44,19 @@
       the spec files, commits, pushes and verifies that the tarball
       downloaded from Source0 matches the commit.
 
+    Updates (2026-11-17, release 2.2.5-7):
+    * New ARPAL extension functions in libdvd.gex: bilin(expr,lon,lat) and
+      bicub(expr,lon,lat) interpolate expr at a lon,lat point from the
+      surrounding grid points (4 for bilinear, 16 for bicubic with the
+      Keys/Catmull-Rom kernel). lon and lat must be fixed; the result varies
+      like the other dimensions (vertical profile, time series, z-t, single
+      value) and can be displayed like any GrADS field. bilin returns undef
+      where one of the points with non-zero weight is missing; bicub falls
+      back to bilinear where one of the 12 outer points is missing (domain
+      border, undef). The reference grid is that of the file of the first
+      variable in expr (e.g. t.2, defined variables), otherwise the default
+      file; global grids wrap in longitude.
+
 2025-11-19 Version 2.2.4
 
     Updates:

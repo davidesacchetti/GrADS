@@ -19,7 +19,7 @@
 
 Name:           grads
 Version:        2.2.5
-Release:        6%{?dist}
+Release:        7%{?dist}
 Summary:        Tool for easy acces, manipulation, and visualization of data
 
 Group:          Applications/Engineering
@@ -155,6 +155,9 @@ cat udpt | sed -e 's|GRADSPREFIX|%{_prefix}|g' > $RPM_BUILD_ROOT%{_datadir}/%{na
 %endif
 
 %changelog
+* Tue Nov 17 2026 ARPAL Sistemi CMI <sistemi.cmi@arpal.liguria.it> - 2.2.5-7
+- ARPAL extensions (libdvd.gex, built by opengrads.spec only): bilin and
+  bicub, bilinear and bicubic interpolation of expr at a lon,lat point
 * Thu Nov 12 2026 ARPAL Sistemi CMI <sistemi.cmi@arpal.liguria.it> - 2.2.5-6
 - 'q pos pointer' ('q bpos pointer'): current position of the mouse pointer
   in page units with no click required (Cairo and X11 displays); outside
