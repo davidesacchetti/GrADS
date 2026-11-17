@@ -75,3 +75,15 @@ Aggiornamento del 12 novembre: release 2.2.5-6
 - src/gxX.c, src/gxX11.c: sotto XWayland, quando il puntatore esce dalla finestra, il server continua a restituire l'ultima posizione vista all'interno, e q pos pointer dava coordinate sul bordo invece di -999.9. Ora gxdbtn verifica anche che il puntatore sia sopra la finestra top-level di GrADS; altrimenti restituisce -999.9 -999.9 -1 -1. Vale anche se il puntatore è sopra un'altra finestra che copre quella di GrADS.
 - La release resta 2.2.5-6: l'RPM è stato ricostruito con lo stesso numero. Dove la -6 precedente è già installata serve "dnf reinstall" con il percorso dell'RPM.
 - ChangeLog, grads.spec, opengrads.spec: voce 2.2.5-6 completata.
+
+Aggiornamento del 16 novembre (sempre release 2.2.5-6)
+
+14. f44d436, 8a9240f: sorgenti dell'RPM (Source0) e release.sh
+
+- Problema: su un altro host l'RPM 2.2.5-6 dava ancora "Can't open display: X11" con grads -d X11 e non conosceva q pos pointer. Source0 puntava al tag v2.2.5 di paolo-oliveri/GrADS, che non contiene le correzioni delle release successive: scaricando quel tarball l'RPM prende il numero nuovo ma contiene il codice vecchio.
+- grads.spec, opengrads.spec: Source0 scarica la punta del branch che si chiama come la versione dal fork (https://github.com/davidesacchetti/GrADS/archive/refs/heads/%{version}.tar.gz). Il tarball si chiama 2.2.5.tar.gz e si scompatta in GrADS-2.2.5, quindi %setup non cambia. Non c'è un tag per ogni release: i tag restano per i soli cambi di versione (es. 2.2.6). In f44d436 Source0 puntava a un tag v2.2.5-6, poi tolto in 8a9240f e cancellato.
+- Il tarball va riscaricato a ogni release (spectool -g -f -R opengrads.spec, oppure curl): ha sempre lo stesso nome e uno vecchio rimasto in rpmbuild/SOURCES verrebbe riusato.
+- Gli spec vanno lanciati con --define "__install_path /opt/grads" --define "module_dir /usr/share/Modules/modulefiles": senza, l'RPM viene costruito in modalità globale, senza modulefile.
+- release.sh (nuovo, nella radice del progetto): ./release.sh <N> controlla che le voci <versione>-<N> ci siano nei %changelog dei due spec e in ChangeLog, imposta Release nei due spec e in readme_dvd.txt, chiede conferma, fa commit e push e verifica che il tarball scaricato da Source0 sia uguale al commit. -n fa solo i controlli, -c solo la verifica del tarball. Non crea tag.
+- readme_dvd.txt: la preparazione del tarball con tar è sostituita dal download da Source0.
+- ChangeLog, grads.spec, opengrads.spec: voce 2.2.5-6 completata.

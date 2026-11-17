@@ -162,6 +162,9 @@ cat udpt | sed -e 's|GRADSPREFIX|%{_prefix}|g' > $RPM_BUILD_ROOT%{_datadir}/%{na
   XWayland, where the server keeps reporting the last position seen inside)
 - The -d option (graphics display back end) works again with the Athena
   GUI: the X toolkit took it as -display ("Can't open display")
+- Source0 is the tip of the branch named after the version in
+  davidesacchetti/GrADS (the v2.2.5 tag of paolo-oliveri/GrADS lacks the
+  later fixes); new release.sh to make a release
 * Wed Nov 11 2026 ARPAL Sistemi CMI <sistemi.cmi@arpal.liguria.it> - 2.2.5-5
 - gradspy 'result' with regridding functions (re, re2): no more crash
   (result grid not bound to a file in re.c, libmf.c, libipc.c) and the

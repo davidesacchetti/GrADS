@@ -36,6 +36,13 @@
     * The -d option (graphics display back end, e.g. '-d Cairo', '-d X11')
       works again in a build with the Athena GUI: the X toolkit took it as
       '-display' and stopped with "Can't open display".
+    * RPM spec files: the sources (Source0) are the tip of the branch named
+      after the version in davidesacchetti/GrADS, no longer the v2.2.5 tag
+      of paolo-oliveri/GrADS, which lacks the later fixes (an RPM built
+      from it was numbered 2.2.5-6 but had the old code).
+    * New release.sh: checks the changelog entries, sets the release in
+      the spec files, commits, pushes and verifies that the tarball
+      downloaded from Source0 matches the commit.
 
 2025-11-19 Version 2.2.4
 
