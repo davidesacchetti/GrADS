@@ -5,8 +5,12 @@
 % altrimenti l'RPM prende il numero nuovo ma contiene il codice vecchio
 # cd ..
 # rm /root/rpmbuild/SOURCES/*
-# curl -L -o /root/rpmbuild/SOURCES/2.2.5.tar.gz https://github.com/davidesacchetti/GrADS/archive/refs/heads/2.2.5.tar.gz
-% (in alternativa, con rpmdevtools: spectool -g -f -R GrADS-2.2.5/opengrads.spec)
+# spectool -g -f -R opengrads.spec
+# rpmbuild -ba opengrads.spec \
+#   --define "__install_path /opt/grads" \
+#   --define "module_dir /usr/share/Modules/modulefiles"
+# dnf install ~/rpmbuild/RPMS/x86_64/grads-2.2.5-9.*.x86_64.rpm
+
 % per provare modifiche non ancora nel push, dalla directory del progetto:
 % git archive --prefix=GrADS-2.2.5/ -o /root/rpmbuild/SOURCES/2.2.5.tar.gz HEAD
 % una release si fa con ./release.sh <N> (vedi i commenti in testa allo script)
@@ -15,8 +19,8 @@
 
 # rpmbuild -ba GrADS-2.2.5/opengrads.spec --define "__install_path /opt/grads" --define "module_dir /usr/share/Modules/modulefiles"
 
-% la release (qui 8) e' quella di "Release:" in opengrads.spec; il suffisso e' .el8 su Rocky 8, .fc44 su Fedora 44
-# dnf install /root/rpmbuild/RPMS/x86_64/grads-2.2.5-8.*.x86_64.rpm
+% la release (qui 9) e' quella di "Release:" in opengrads.spec; il suffisso e' .el8 su Rocky 8, .fc44 su Fedora 44
+# dnf install /root/rpmbuild/RPMS/x86_64/grads-2.2.5-9.*.x86_64.rpm
 
 % gradspy sta in /opt/grads/lib/libgradspy.so (variabile GAGPY, impostata da "module load grads")
 % per mettere gradspy nel venv (ATTENZIONE: bisogna prima attivare il venv, altrimenti finisce in ~/.local):

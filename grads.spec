@@ -19,7 +19,7 @@
 
 Name:           grads
 Version:        2.2.5
-Release:        8%{?dist}
+Release:        9%{?dist}
 Summary:        Tool for easy acces, manipulation, and visualization of data
 
 Group:          Applications/Engineering
