@@ -74,6 +74,12 @@
       --with-release=STR, which the spec files set to %{version}-%{release};
       without the option the output is unchanged.
 
+    Fixes (2026-11-18, release 2.2.5-10):
+    * Cairo display, double buffering: 'swap' no longer leaks two cairo
+      contexts at every call (about 3.5 KB per swap: 142 MB after 30000
+      swaps, now 42 MB); the background is copied to the window in one
+      operation and a pending path is stroked before the copy.
+
 2025-11-19 Version 2.2.4
 
     Updates:

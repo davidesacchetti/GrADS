@@ -134,3 +134,15 @@ Aggiornamento del 18 novembre: release 2.2.5-9
 21. release 2.2.5-9
 
 - grads.spec, opengrads.spec: release 9 e voce nel changelog. ChangeLog e readme_dvd.txt aggiornati; readme_dvd.txt contiene anche le istruzioni di build con spectool, rpmbuild con i --define e dnf install.
+
+Aggiornamento del 18 novembre: release 2.2.5-10
+
+22. swap con il display Cairo
+
+- src/gxC.c (gxCswp): a ogni 'swap' in double buffer venivano creati due contesti cairo mai liberati (circa 3,5 KB per swap: 46 MB dopo 3000 swap e 142 MB dopo 30000, ora 36 e 42 MB). Ora il contesto usato per copiare il buffer nascosto nella finestra viene liberato, e quello del buffer nascosto viene sostituito distruggendo il precedente. La copia avviene in una sola operazione (operatore SOURCE) e il percorso eventualmente non ancora tracciato viene tracciato prima, cosi' fa parte del fotogramma mostrato.
+- Nota per gli script di animazione (ad esempio essl_skew.gs): in double buffer non si deve usare 'clear' a ogni fotogramma, perche' spegne il double buffering ('q dbuff' risponde "double buffering is off") e tutto viene disegnato sulla finestra visibile, con flickering. Basta 'swap', che pulisce il buffer nascosto e resetta le opzioni come clear.
+- Provato sul display con 50, 3000 e 30000 cicli screen show + draw + swap: fotogramma finale identico a prima, memoria come sopra.
+
+23. release 2.2.5-10
+
+- grads.spec, opengrads.spec: release 10 e voce nel changelog. ChangeLog e readme_dvd.txt aggiornati.

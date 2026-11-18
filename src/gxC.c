@@ -531,12 +531,20 @@ void gxCsfc (cairo_surface_t *Xsfc) {
 /* Swap action for double buffering */
 
 void gxCswp (cairo_surface_t *Xsfc, cairo_surface_t *Xsfc2) {
-  /* draw the background (sfc2) onto the foreground (sfc) */
-  cr = cairo_create(Xsfc);
-  cairo_set_source_surface(cr, Xsfc2, 0, 0);
-  cairo_paint(cr);
-  /* reset the cairo context to the background surface,  */
+cairo_t *c;
+  gxCflush(0);   /* stroke the pending path, so it is part of the frame shown */
+  /* draw the background (sfc2) onto the foreground (sfc) in one operation */
+  c = cairo_create(Xsfc);
+  cairo_set_operator(c, CAIRO_OPERATOR_SOURCE);
+  cairo_set_source_surface(c, Xsfc2, 0, 0);
+  cairo_paint(c);
+  cairo_destroy(c);
+  cairo_surface_flush(Xsfc);
+  /* reset the cairo context to the background surface; the previous
+     contexts were never released (two leaked at every swap) */
+  if (cr) cairo_destroy(cr);
   cr = cairo_create(Xsfc2);
+  Xcr = cr;
 }
 
 /* Frame action.  Clear the frame. */ 

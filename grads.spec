@@ -155,6 +155,9 @@ cat udpt | sed -e 's|GRADSPREFIX|%{_prefix}|g' > $RPM_BUILD_ROOT%{_datadir}/%{na
 %endif
 
 %changelog
+* Wed Nov 18 2026 ARPAL Sistemi CMI <sistemi.cmi@arpal.liguria.it> - 2.2.5-10
+- Cairo display: 'swap' no longer leaks two cairo contexts per call; the
+  background buffer is copied to the window in one operation
 * Wed Nov 18 2026 ARPAL Sistemi CMI <sistemi.cmi@arpal.liguria.it> - 2.2.5-9
 - 'q config' shows the full release (configure --with-release, set by the
   spec to %%{version}-%%{release})
