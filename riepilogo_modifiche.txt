@@ -1,0 +1,95 @@
+RIEPILOGO MODIFICHE - GrADS 2.2.5 (fork ARPAL) e gradspy
+aggiornato al 18 novembre 2026
+
+Repository
+- GrADS:   /opt/other/GrADS-2.2.5, branch 2.2.5
+           origin = github.com/davidesacchetti/GrADS, upstream = paolo-oliveri/GrADS
+- gradspy: /opt/other/gradspy (gitlab.cfmi.arpal.org system/gradspy)
+- script:  /home/davide.sacchetti/TEST/mmm/grads (gitlab davide.sacchetti/mmm)
+Dettagli completi: changelog_2.2.5.txt e ChangeLog nel repository GrADS.
+
+
+1. GrADS 2.2.5 - GRAFICA (display Cairo)
+
+- Widget ripristinati sul display Cairo (prima solo X11): bottoni, rubber band,
+  dropmenu con cascate, finestre di dialogo, screen save/show/free.
+  Dropmenu stabili (sottomenu con ritardo, disegno senza sfarfallio),
+  corretti il blocco dopo molte selezioni e i menu di quarto livello. (2.2.5-1..5)
+- 'q pos pointer' / 'q bpos pointer': posizione del mouse senza attendere il
+  click; fuori dalla finestra -999.9 (anche sotto XWayland). (2.2.5-6)
+- Opzione -d (scelta del backend, es. grads -d X11) di nuovo funzionante:
+  prima la GUI Athena la interpretava come -display. (2.2.5-6)
+- 'screen dump N file.png' / 'screen load N file.png': schermi salvati su file
+  e riletti in altre sessioni; 'screen show' si adatta al ridimensionamento
+  della finestra. (2.2.5-8)
+- 'set gxout grfill' 3-5 volte piu' veloce su griglie grandi, immagine
+  identica. (2.2.5-8)
+- Double buffer (dbuff/swap): niente perdita di memoria a ogni swap
+  (prima ~3,5 KB per swap); al ridimensionamento della finestra il buffer
+  nascosto viene ricreato e l'immagine ridisegnata in scala (prima la parte
+  ingrandita restava nera). (2.2.5-10, 2.2.5-11)
+
+
+2. GrADS 2.2.5 - FUNZIONI E COMANDI
+
+- collect con tutte le dimensioni fisse; coll2gr con solo X variabile
+  restituisce una sezione 1-D (sezioni oblique, define di sezioni X-Z). (2.2.5-1)
+- Estensioni ARPAL (libdvd.gex): bilin(expr,lon,lat) e bicub(expr,lon,lat),
+  interpolazione bilineare/bicubica in un punto, usate per i profili
+  verticali degli skew. (2.2.5-7)
+- 'q config' mostra la release completa (es. "Release 2.2.5-11.fc44"). (2.2.5-9)
+- Caricatore delle estensioni (gaudx.c): correzioni su buffer, spazi e ultima
+  riga della tabella. (2.2.5-5)
+- Mappe hres/lres/mres_world installate in /opt/grads/share/grads. (2.2.5-2)
+- Compilazione con g2clib 1.6.0.
+
+
+3. GrADS 2.2.5 - GRADSPY (lato GrADS)
+
+- gradspy result() con funzioni di regridding (re, re2): niente piu' crash,
+  coordinate della griglia risultato (re.c, libmf.c, libipc.c, gadoexpr). (2.2.5-5)
+- Istanze multiple di gradspy in python: patch di grads.c di Paolo (f1a0294,
+  febbraio 2024), gia' in upstream e quindi inclusa nella 2.2.5.
+- src/gradspy.c nel repository GrADS resta quello originale; la versione
+  ARPAL e' nel repository gradspy (sezione 5).
+
+
+4. GrADS 2.2.5 - RPM E RELEASE
+
+- Source0 degli spec: punta del branch 2.2.5 del fork (non piu' il tag v2.2.5
+  di Paolo, che dava RPM con il codice vecchio). Nessun tag per release:
+  i tag solo ai cambi di versione (2.2.6).
+- release.sh: ./release.sh <N> controlla i changelog, imposta Release,
+  fa commit e push e verifica il tarball scaricato (-n solo controlli,
+  -c solo verifica del tarball).
+- Build: spectool -g -f -R opengrads.spec, poi
+  rpmbuild -ba opengrads.spec --define "__install_path /opt/grads" \
+       --define "module_dir /usr/share/Modules/modulefiles"
+  (opengrads.spec compila anche le estensioni ARPAL; grads.spec no)
+- Release in uso: 2.2.5-11.
+
+
+5. GRADSPY (repository separato /opt/other/gradspy)
+
+- 2023: prima versione a classi; pacchetto installabile; utility per le date
+  (date_convert_to_datetime, datetime_to_grads, discriminate_dtrf_datagrads);
+  argomenti con spazi; chiusura dei dataset nel thread di GrADS.
+- 2024: istanze multiple di GrADS nello stesso processo python (handler delle
+  aperture multiple, correzioni di Paolo), reinit=True in __init__;
+  compatibilita' NumPy 2.0; get_subset_values con array fino a 5D e undef
+  convertiti in NaN.
+- marzo 2026: versione aggiornata.
+- Installazione nel venv: pip install --no-build-isolation /opt/other/gradspy
+  (vedi readme_dvd.txt).
+
+
+6. SCRIPT SKEW (repository mmm, grads/)
+
+- essl_widget.gs: unione di essl_main.gs e getpointer.gs con i widget nativi,
+  q bpos pointer e zoom con rubber band.
+- essl_skew.gs: profili con bicub; tolto 'clear' dal ciclo (spegneva il
+  double buffer e causava lo sfarfallio).
+- plotskew.gsf: odografo corretto (fasce di quota colorate, anche per le
+  barbe), CAPE in violetto e CIN in giallino, profili T/Td lisciati con
+  interpolazione monotona (PCHIP) che passa per i valori ai livelli
+  (SmoothSnd=0 per tornare alle spezzate).
