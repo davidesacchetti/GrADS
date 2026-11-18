@@ -68,6 +68,12 @@
       of a row with the same color are filled as one polygon (3-5 times
       faster on a 2400x1600 grid, identical image).
 
+    Updates (2026-11-18, release 2.2.5-9):
+    * 'q config' shows the full release (e.g. "Release 2.2.5-9.el9") below
+      the version line. It comes from the new configure option
+      --with-release=STR, which the spec files set to %{version}-%{release};
+      without the option the output is unchanged.
+
 2025-11-19 Version 2.2.4
 
     Updates:

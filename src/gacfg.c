@@ -116,6 +116,9 @@ snprintf(cmd,255,"Config: v%s",GRADS_VERSION);
  }
  
  gaprnt (verbose, "Grid Analysis and Display System (GrADS) Version " GRADS_VERSION "\n");
+#ifdef GRADS_RELEASE
+ gaprnt (verbose, "Release " GRADS_RELEASE "\n");
+#endif
  gaprnt (verbose, "Copyright (C) 1988-2022 by George Mason University \n");
  gaprnt (verbose, "GrADS comes with ABSOLUTELY NO WARRANTY \n");
  gaprnt (verbose, "See file COPYRIGHT for more information \n\n");

@@ -74,7 +74,7 @@ autoreconf -fi
 %global _general_options %{_general_options} -O1
 
 # Configure
-%configure --with-gadap
+%configure --with-gadap --with-release=%{version}-%{release}
 
 # Build process
 make
@@ -155,6 +155,9 @@ cat udpt | sed -e 's|GRADSPREFIX|%{_prefix}|g' > $RPM_BUILD_ROOT%{_datadir}/%{na
 %endif
 
 %changelog
+* Wed Nov 18 2026 ARPAL Sistemi CMI <sistemi.cmi@arpal.liguria.it> - 2.2.5-9
+- 'q config' shows the full release (configure --with-release, set by the
+  spec to %%{version}-%%{release})
 * Wed Nov 18 2026 ARPAL Sistemi CMI <sistemi.cmi@arpal.liguria.it> - 2.2.5-8
 - 'screen dump N file.png' and 'screen load N file.png': saved screens to
   and from PNG files (Cairo display); after a 'screen show' the window is

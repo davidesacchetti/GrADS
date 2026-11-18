@@ -72,6 +72,11 @@ AC_ARG_WITH([gadap],
             [],
             [with_gadap=no])
 
+AC_ARG_WITH([release],
+	    [AS_HELP_STRING([--with-release=STR], [full release string shown by 'q config' (e.g. 2.2.5-8.el9)])],
+            [],
+            [with_release=no])
+
 # ----------------------------------------------------
 # Checks for programs
 # ----------------------------------------------------
@@ -900,6 +905,9 @@ AC_ARG_ENABLE([opengrads],
 
 # Some non-configuration-dependent GrADS macros
 AC_DEFINE(GRADS_VERSION, "AC_PACKAGE_VERSION", [GrADS version])
+if test "x$with_release" != "xno" && test "x$with_release" != "xyes" && test -n "$with_release"; then
+  AC_DEFINE_UNQUOTED(GRADS_RELEASE, "$with_release", [GrADS full release (version-release)])
+fi
 
 # These are used to add the necessary source files to Makefile targets
 AM_CONDITIONAL(READLINE,  [ test "$use_readline"  = "yes" ] )

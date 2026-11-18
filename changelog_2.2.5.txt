@@ -121,3 +121,16 @@ Aggiornamento del 18 novembre: release 2.2.5-8
 19. release 2.2.5-8
 
 - grads.spec, opengrads.spec: release 8 e voce nel changelog. ChangeLog e readme_dvd.txt aggiornati.
+
+Aggiornamento del 18 novembre: release 2.2.5-9
+
+20. q config mostra la release completa
+
+- configure.ac: nuova opzione --with-release=STR, che definisce GRADS_RELEASE in config.h.
+- src/gacfg.c: se GRADS_RELEASE e' definita, 'q config' stampa la riga "Release <STR>" sotto "Grid Analysis and Display System (GrADS) Version 2.2.5". La prima riga "Config: v2.2.5 ..." resta invariata, per gli script che la leggono con subwrd. Senza l'opzione l'output e' come prima.
+- grads.spec, opengrads.spec: %configure con --with-release=%{version}-%{release}, quindi la stringa e' la stessa di rpm -q grads (ad esempio 2.2.5-9.el9).
+- Provato con una build con --with-release=2.2.5-8.el9.
+
+21. release 2.2.5-9
+
+- grads.spec, opengrads.spec: release 9 e voce nel changelog. ChangeLog e readme_dvd.txt aggiornati; readme_dvd.txt contiene anche le istruzioni di build con spectool, rpmbuild con i --define e dnf install.
