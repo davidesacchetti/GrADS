@@ -4245,11 +4245,13 @@ gadouble minvals[4], maxvals[4],dval;
 
   else if (cmpwrd(arg,"bpos") || cmpwrd(arg,"pos")) {
     i = 1;
-    if ((arg = nxtwrd (arg)) != NULL) {
+    j = 0;
+    while ((arg = nxtwrd (arg)) != NULL) {
       if (cmpwrd(arg,"nowait")) i = 0;
       else if (cmpwrd(arg,"pointer")) i = 3;   /* current pointer position, no click */
+      else if (cmpwrd(arg,"keys")) j = 4;      /* keyboard events too (class 4) */
     }
-    dsubs->gxdbtn (i, &x, &y, &i, &etype, info, rinfo);
+    dsubs->gxdbtn (i+j, &x, &y, &i, &etype, info, rinfo);
     if (etype<1) {
       snprintf(pout,1255,"Position = %g %g %i %i\n",
 	       x,y,i,etype);
@@ -4262,6 +4264,10 @@ gadouble minvals[4], maxvals[4],dval;
     } else if (etype==3) {
       snprintf(pout,1255,"Position = %g %g %i %i %i %i %i %i %i %i %i %i\n",
          x,y,i,etype,*info,*(info+1),*(info+2),*(info+3),*(info+4),*(info+5),*(info+6),*(info+7));
+    } else if (etype==4) {
+      /* keyboard: X keysym and modifiers */
+      snprintf(pout,1255,"Position = %g %g %i %i %i %i\n",
+	       x,y,i,etype,*info,*(info+1));
     }
     gaprnt (2,pout);
   }

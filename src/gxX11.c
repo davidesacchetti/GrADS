@@ -93,6 +93,7 @@ static struct gdmu dmu2[200];   /* Background dropmenus */
 /* static struct gdlg dlg[1];      /\* Current dialog *\/ */
 
 static struct gevent *evbase;   /* Anchor for GrADS event queue */
+static gaint keyflg=0;                      /* 1: a script asked for keyboard events */
 
 /* All stuff passed to Xlib routines as args are put here in
    static areas since we are not invoking Xlib routines from main*/
@@ -287,7 +288,7 @@ char **flist,*xfnam;
   /* Select event types */
 
   XSelectInput(display, win, ButtonReleaseMask | ButtonPressMask |
-      ButtonMotionMask | ExposureMask | StructureNotifyMask);
+      ButtonMotionMask | KeyPressMask | ExposureMask | StructureNotifyMask);
 
   /* Get a Graphics Context */
 
@@ -596,6 +597,41 @@ gaint i,j,ii,rc,wflg,button,eflg,idm,rdrflg;
       wflg = 0;                  /* Check for more events, but don't
                                     wait if there aren't any. */
       break;
+    case KeyPress:
+      /* Keyboard: queued (class 4) only after a script asked for keys
+         with 'q bpos keys', otherwise ignored as before */
+      if (!keyflg) break;
+      {
+        KeySym ksym;
+        char kbuf[8];
+        XLookupString((XKeyEvent *)&report, kbuf, sizeof(kbuf), &ksym, NULL);
+        if (ksym==NoSymbol) break;
+        /* modifier keys alone are not events */
+        if (ksym>=XK_Shift_L && ksym<=XK_Hyper_R) break;
+        geve = (struct gevent *)malloc(sizeof(struct gevent));
+        if (geve==NULL) {
+          printf ("Memory allocation error in event queue!!!!!!\n");
+          eflg = 1;
+          break;
+        }
+        if (evbase==NULL) evbase = geve;
+        else {
+          geve2 = evbase;
+          while (geve2->forw) geve2 = geve2->forw;
+          geve2->forw = geve;
+        }
+        geve->forw = NULL;
+        geve->x = xsize*((gadouble)report.xkey.x)/width;
+        geve->y = ysize - ysize*((gadouble)report.xkey.y)/height;
+        geve->mbtn = 0;
+        geve->type = 4;
+        for (ii=0; ii<10; ii++) geve->info[ii] = 0;
+        for (ii=0; ii<4; ii++) geve->rinfo[ii] = 0.0;
+        geve->info[0] = (gaint)ksym;            /* X keysym, e.g. 65361 = Left */
+        geve->info[1] = (gaint)report.xkey.state; /* modifiers (1 shift, 4 ctrl) */
+        wflg = 0;
+      }
+      break;
     case ConfigureNotify:
       if(width!=report.xconfigure.width||height!=report.xconfigure.height){
         width = report.xconfigure.width;
@@ -615,17 +651,40 @@ gaint i,j,ii,rc,wflg,button,eflg,idm,rdrflg;
   }
 }
 
+/* Remove the keyboard events (class 4) from the GrADS event queue */
+static void gxdkdrop (void) {
+struct gevent *geve, *prev, *next;
+  prev = NULL;
+  geve = evbase;
+  while (geve) {
+    next = geve->forw;
+    if (geve->type==4) {
+      if (prev) prev->forw = next;
+      else evbase = next;
+      free(geve);
+    } else prev = geve;
+    geve = next;
+  }
+}
+
 /* Return info on mouse button press event.  Wait if requested. */
 
 void gxdbtn (gaint flag, gadouble *xpos, gadouble *ypos,
 	     gaint *mbtn, gaint *type, gaint *info, gadouble *rinfo) {
 struct gevent *geve;
-gaint i;
+gaint i,keys;
 
   if (batch) {
     *xpos = -999.9;
     *ypos = -999.9;
     return;
+  }
+  /* flag+4: keyboard events wanted too (q bpos keys) */
+  keys = 0;
+  if (flag>=4) {
+    keys = 1;
+    keyflg = 1;
+    flag -= 4;
   }
   if (flag==3) {
     /* Current pointer position, no button press needed.
@@ -670,7 +729,12 @@ gaint i;
     *type = 0;
     return;
   }
-  gxdeve(flag);
+  while (1) {
+    gxdeve(flag);
+    /* not asked for keys: drop them and, if waiting, wait again */
+    if (!keys) gxdkdrop();
+    if (evbase!=NULL || flag==0) break;
+  }
   if (evbase==NULL) {
     *xpos = -999.9;
     *ypos = -999.9;
@@ -2676,7 +2740,7 @@ mf*/
   XDestroyWindow(display,pop);
   gxdsfn();
   XSelectInput(display, win, ButtonReleaseMask | ButtonPressMask |
-      ButtonMotionMask | ExposureMask | StructureNotifyMask);
+      ButtonMotionMask | KeyPressMask | ExposureMask | StructureNotifyMask);
   if (!bsflg) {
     if (wmap) {
       XCopyArea (display, wmap, win, gc, 0, 0, width, height, 0, 0);
