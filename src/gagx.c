@@ -5163,6 +5163,7 @@ size_t sz;
 */
 
 gaint gacntr (struct gacmn *pcm, gaint filflg, gaint shpflg) {
+gaint gfrect;
 struct gagrid *pgr;
 gadouble cmin,cmax,cint;
 gadouble rl,rr,rrb,rmin,rmax, *rrr=0,*r;
@@ -5358,11 +5359,14 @@ size_t sz;
   rrb = irb+1;
   if (filflg) {
     gaselc (pcm,pgr->rmin,pgr->rmax);
+    /* grfill: rows of cells are rectangles on the page unless a map
+       projection other than latlon/scaled is used */
+    gfrect = (pcm->mproj<=2 || pgr->idim!=0 || pgr->jdim!=1);
     if (smooth) {
       if (filflg==1) {
 	gxshad (rrr,isz,jsz,pcm->shdlvs,pcm->shdcls,pcm->shdcnt,rrrmask);
       } else if (filflg==2) {
-	gagfil (rrr,isz,jsz,pcm->shdlvs,pcm->shdcls,pcm->shdcnt,rrrmask);
+	gagfil (rrr,isz,jsz,pcm->shdlvs,pcm->shdcls,pcm->shdcnt,rrrmask,gfrect);
       } else if (filflg==3) {
 	gaimap (rrr,isz,jsz,pcm->shdlvs,pcm->shdcls,pcm->shdcnt,rrrmask,
                     pcm->xsiz1,pcm->xsiz2,pcm->ysiz1,pcm->ysiz2);
@@ -5376,7 +5380,7 @@ size_t sz;
       if (filflg==1) {
         gxshad (pgr->grid,pgr->isiz,pgr->jsiz,pcm->shdlvs,pcm->shdcls,pcm->shdcnt,pgr->umask);
       } else if (filflg==2) {
-        gagfil (pgr->grid,pgr->isiz,pgr->jsiz,pcm->shdlvs,pcm->shdcls,pcm->shdcnt,pgr->umask);
+        gagfil (pgr->grid,pgr->isiz,pgr->jsiz,pcm->shdlvs,pcm->shdcls,pcm->shdcnt,pgr->umask,gfrect);
       } else if (filflg==3) {
         gaimap (pgr->grid,pgr->isiz,pgr->jsiz,pcm->shdlvs,pcm->shdcls,pcm->shdcnt,
              pgr->umask, pcm->xsiz1,pcm->xsiz2,pcm->ysiz1,pcm->ysiz2);
@@ -6964,55 +6968,78 @@ void gaacly (gadouble xin, gadouble yin, gadouble *xout, gadouble *yout) {
 }
 
 
-/* Grid fill -- using color ranges as in shaded contours */
+/* Grid fill -- using color ranges as in shaded contours.
+   Consecutive cells of a row with the same color are filled as one polygon
+   (much faster on large grids). With rect set the cells of a row form a
+   rectangle on the page (latlon and scaled projections, non-map plots), and
+   four corners are enough; otherwise the polygon follows the edges of all
+   the cells of the run. */
 
-void gagfil (gadouble *r, gaint is, gaint js, gadouble *vs, gaint *clrs, gaint lvs, char *ru) {
-gadouble x,y,*v,xybox[10];
-gaint i,j,k,flag;
+void gagfil (gadouble *r, gaint is, gaint js, gadouble *vs, gaint *clrs, gaint lvs, char *ru, gaint rect) {
+gadouble x,y,*v,*xy;
+gaint i,j,k,i0,ii,n,c0,*cls;
 char *vu;
 
+  cls = (gaint *)malloc(sizeof(gaint)*is);
+  xy = (gadouble *)malloc(sizeof(gadouble)*(4*is+10));
+  if (cls==NULL || xy==NULL) {
+    printf ("Memory allocation error in grid fill\n");
+    if (cls) free(cls);
+    if (xy) free(xy);
+    return;
+  }
   v = r;
   vu = ru;
   for (j=1; j<=js; j++) {
-    for (i=1; i<=is; i++) {
-      if (*vu != 0) {
-	flag = 1;
-	for (k=0; k<lvs-1; k++) {
-	  if (*v>*(vs+k) && *v<=*(vs+k+1)) {
-	    gxcolr(*(clrs+k));
-	    gxconv ((gadouble)(i)-0.5,(gadouble)(j)-0.5,&x,&y,3);
-	    xybox[0] = x; xybox[1] = y;
-	    gxconv ((gadouble)(i)+0.5,(gadouble)(j)-0.5,&x,&y,3);
-	    xybox[2] = x; xybox[3] = y;
-	    gxconv ((gadouble)(i)+0.5,(gadouble)(j)+0.5,&x,&y,3);
-	    xybox[4] = x; xybox[5] = y;
-	    gxconv ((gadouble)(i)-0.5,(gadouble)(j)+0.5,&x,&y,3);
-	    xybox[6] = x; xybox[7] = y;
-	    gxconv ((gadouble)(i)-0.5,(gadouble)(j)-0.5,&x,&y,3);
-	    xybox[8] = x; xybox[9] = y;
-	    gxfill (xybox,5);
-	    flag = 0;
-	    break;
-	  }
-	}
-	if (flag) {
-	  gxcolr(*(clrs+lvs-1));
-	  gxconv ((gadouble)(i)-0.5,(gadouble)(j)-0.5,&x,&y,3);
-	  xybox[0] = x; xybox[1] = y;
-	  gxconv ((gadouble)(i)+0.5,(gadouble)(j)-0.5,&x,&y,3);
-	  xybox[2] = x; xybox[3] = y;
-	  gxconv ((gadouble)(i)+0.5,(gadouble)(j)+0.5,&x,&y,3);
-	  xybox[4] = x; xybox[5] = y;
-	  gxconv ((gadouble)(i)-0.5,(gadouble)(j)+0.5,&x,&y,3);
-	  xybox[6] = x; xybox[7] = y;
-	  gxconv ((gadouble)(i)-0.5,(gadouble)(j)-0.5,&x,&y,3);
-	  xybox[8] = x; xybox[9] = y;
-	  gxfill (xybox,5);
-	}
+    /* color index of each cell of the row, -1 if undefined */
+    for (i=0; i<is; i++) {
+      if (*vu == 0) *(cls+i) = -1;
+      else {
+        *(cls+i) = lvs-1;
+        for (k=0; k<lvs-1; k++) {
+          if (*v>*(vs+k) && *v<=*(vs+k+1)) {
+            *(cls+i) = k;
+            break;
+          }
+        }
       }
       v++; vu++;
-    } 
+    }
+    /* runs of cells with the same color: i0..i (1-based) */
+    i = 1;
+    while (i<=is) {
+      c0 = *(cls+i-1);
+      if (c0<0) { i++; continue; }
+      i0 = i;
+      while (i<is && *(cls+i)==c0) i++;
+      gxcolr(*(clrs+c0));
+      n = 0;
+      if (rect) {
+        gxconv ((gadouble)(i0)-0.5,(gadouble)(j)-0.5,&x,&y,3);
+        xy[2*n] = x; xy[2*n+1] = y; n++;
+        gxconv ((gadouble)(i)+0.5,(gadouble)(j)-0.5,&x,&y,3);
+        xy[2*n] = x; xy[2*n+1] = y; n++;
+        gxconv ((gadouble)(i)+0.5,(gadouble)(j)+0.5,&x,&y,3);
+        xy[2*n] = x; xy[2*n+1] = y; n++;
+        gxconv ((gadouble)(i0)-0.5,(gadouble)(j)+0.5,&x,&y,3);
+        xy[2*n] = x; xy[2*n+1] = y; n++;
+      } else {
+        for (ii=i0; ii<=i+1; ii++) {          /* lower edge, left to right */
+          gxconv ((gadouble)(ii)-0.5,(gadouble)(j)-0.5,&x,&y,3);
+          xy[2*n] = x; xy[2*n+1] = y; n++;
+        }
+        for (ii=i+1; ii>=i0; ii--) {          /* upper edge, right to left */
+          gxconv ((gadouble)(ii)-0.5,(gadouble)(j)+0.5,&x,&y,3);
+          xy[2*n] = x; xy[2*n+1] = y; n++;
+        }
+      }
+      xy[2*n] = xy[0]; xy[2*n+1] = xy[1]; n++;  /* close the polygon */
+      gxfill (xy,n);
+      i++;
+    }
   }
+  free(cls);
+  free(xy);
 }
 
 /* Direct image map to X display.  Bypasses metafile (ie, no refresh on

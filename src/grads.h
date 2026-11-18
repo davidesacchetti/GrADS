@@ -1128,7 +1128,7 @@ void gaclx (gadouble, gadouble, gadouble *, gadouble *);
 void gacly (gadouble, gadouble, gadouble *, gadouble *);
 void gaaclx (gadouble, gadouble, gadouble *, gadouble *);
 void gaacly (gadouble, gadouble, gadouble *, gadouble *);
-void gagfil (gadouble *, gaint, gaint, gadouble *, gaint *, gaint, char *);
+void gagfil (gadouble *, gaint, gaint, gadouble *, gaint *, gaint, char *, gaint);
 void gaimap (gadouble *, gaint, gaint, gadouble *, gaint *, gaint, char *, 
                    gadouble, gadouble, gadouble, gadouble);
 void gafram (struct gacmn *);
