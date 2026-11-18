@@ -18,7 +18,7 @@
 #
 Name:           grads
 Version:        2.2.5
-Release:        11%{?dist}
+Release:        12%{?dist}
 Summary:        Tool for easy acces, manipulation, and visualization of data
 
 Group:          Applications/Engineering
@@ -188,6 +188,10 @@ cat udpt | sed -e 's|GRADSPREFIX|%{_prefix}|g' > $RPM_BUILD_ROOT%{_datadir}/%{na
 %endif
 
 %changelog
+* Wed Nov 18 2026 ARPAL Sistemi CMI <sistemi.cmi@arpal.liguria.it> - 2.2.5-12
+- 'q pos keys' (also with nowait/pointer): key presses in the graphics
+  window are returned as class 4 with the X keysym and the modifiers
+  (Cairo and X11 displays); without 'keys' they are discarded as before
 * Wed Nov 18 2026 ARPAL Sistemi CMI <sistemi.cmi@arpal.liguria.it> - 2.2.5-11
 - Cairo display, double buffering: window resize recreates the background
   pixmap and redraws the displayed image scaled (enlarged part was black)

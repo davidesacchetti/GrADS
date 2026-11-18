@@ -158,3 +158,17 @@ Aggiornamento del 18 novembre: release 2.2.5-11
 25. release 2.2.5-11
 
 - grads.spec, opengrads.spec: release 11 e voce nel changelog. ChangeLog e readme_dvd.txt aggiornati.
+
+Aggiornamento del 18 novembre: release 2.2.5-12
+
+26. 342d741: q pos keys, eventi da tastiera
+
+- src/gauser.c: 'q pos' / 'q bpos' accetta la parola keys, anche insieme a nowait o pointer e in qualunque ordine. Per un tasto stampa "Position = x y 0 4 keysym state": classe 4, keysym X (65361 sinistra, 65362 alto, 65363 destra, 65364 basso, il codice del carattere per lettere e cifre), state con i modificatori (1 Shift, 4 Ctrl).
+- src/gxX.c (Cairo) e src/gxX11.c (X11): la finestra grafica riceve anche KeyPress (non durante le finestre di dialogo di X11, che leggono la tastiera per conto loro); gxdeve mette in coda i tasti come eventi di classe 4, ma solo dopo che uno script li ha chiesti la prima volta con keys; i tasti modificatori da soli non sono eventi. gxdbtn riceve flag+4 quando servono i tasti; senza keys li toglie dalla coda e, se deve aspettare, torna ad aspettare un click. Cosi' gli script che usano q bpos senza keys (gridview8.gs, essl_widget.gs) non vedono differenze.
+- doc/gradcomdqpos.html: documentato l'argomento keys.
+- Usato da gridview9.gs: con lo skew continuo attivo le frecce sinistra/destra cambiano la scadenza e alto/basso il livello, mentre i tasti del mouse sulla mappa restano allo skew.
+- Provato sul display (sessione Wayland, XWayland) con la tastiera vera: frecce, lettere e click restituiti con q bpos keys; con q bpos senza keys i tasti vengono ignorati e torna solo il click. Gli eventi sintetici di xdotool non arrivano alla finestra sotto XWayland, quindi la prova va fatta a mano.
+
+27. release 2.2.5-12
+
+- grads.spec, opengrads.spec: release 12 e voce nel changelog. ChangeLog e readme_dvd.txt aggiornati.

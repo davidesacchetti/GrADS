@@ -88,6 +88,16 @@
       including a 'screen show'; the frame being drawn is redrawn in the
       background. 'set dbuff on/off' no longer leaks a cairo context.
 
+    Updates (2026-11-18, release 2.2.5-12):
+    * 'q pos keys' (or 'q bpos keys', also 'q bpos nowait keys'): besides
+      the mouse clicks, a key pressed in the graphics window is returned as
+      class 4: "Position = xpos ypos 0 4 keysym state", where keysym is the
+      X keysym (65361 Left, 65362 Up, 65363 Right, 65364 Down, character
+      code for letters and digits) and state the modifiers (1 Shift,
+      4 Control). Modifier keys alone are not events. Without 'keys' the
+      key presses are discarded, also those already queued, so existing
+      scripts behave as before (Cairo and X11 displays).
+
 2025-11-19 Version 2.2.4
 
     Updates:

@@ -17,6 +17,9 @@ Dettagli completi: changelog_2.2.5.txt e ChangeLog nel repository GrADS.
   corretti il blocco dopo molte selezioni e i menu di quarto livello. (2.2.5-1..5)
 - 'q pos pointer' / 'q bpos pointer': posizione del mouse senza attendere il
   click; fuori dalla finestra -999.9 (anche sotto XWayland). (2.2.5-6)
+- 'q pos keys' / 'q bpos nowait keys': anche i tasti premuti nella finestra
+  grafica (classe 4, keysym X: frecce 65361-65364); senza keys i tasti sono
+  ignorati come prima. (2.2.5-12)
 - Opzione -d (scelta del backend, es. grads -d X11) di nuovo funzionante:
   prima la GUI Athena la interpretava come -display. (2.2.5-6)
 - 'screen dump N file.png' / 'screen load N file.png': schermi salvati su file
@@ -66,7 +69,7 @@ Dettagli completi: changelog_2.2.5.txt e ChangeLog nel repository GrADS.
   rpmbuild -ba opengrads.spec --define "__install_path /opt/grads" \
        --define "module_dir /usr/share/Modules/modulefiles"
   (opengrads.spec compila anche le estensioni ARPAL; grads.spec no)
-- Release in uso: 2.2.5-11.
+- Release in uso: 2.2.5-12.
 
 
 5. GRADSPY (repository separato /opt/other/gradspy)
