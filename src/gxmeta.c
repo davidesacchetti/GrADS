@@ -36,7 +36,11 @@ struct gxmbuf {
   float *buff;                   /* Buffer area */
   gaint len;                     /* Length of Buffer area */
   gaint used;                    /* Amount of buffer used */
+  gaint lastscr;                 /* Sequence number of the last 'screen show'
+                                    in this buffer (anchor only), 0 if none */
 };
+
+static gaint scrseq = 0;         /* Sequence of 'screen show' operations */
 
 /* Buffer chain anchor here; also a convenience pointer to the last buffer
    in the chain.  Times 2, for double buffering.  mbufanch and mbuflast 
@@ -422,7 +426,7 @@ float *buff;
 int *iii;
 gadouble r,s,x,y,w,h,ang;
 gadouble *xybuf;
-gaint ppp,cmd,op1,op2,op3,op4,op5,fflag,xyc=0,fn,sig;
+gaint ppp,cmd,op1,op2,op3,op4,op5,fflag,xyc=0,fn,sig,lastscr;
 signed char *ch;
 char ccc,*uch;
 
@@ -436,6 +440,7 @@ char ccc,*uch;
  
   if (dbflg) pmbuf = mbufanch2;
   else pmbuf = mbufanch; 
+  lastscr = pmbuf ? pmbuf->lastscr : 0;
 
   fflag = 0;
   xybuf = NULL;
@@ -708,6 +713,18 @@ char ccc,*uch;
         ppp += 3;
       }
 
+      /* -26 is a 'screen show': screen number and sequence number. Only the
+         last one in the buffer is painted; not printed (printim, gxprint) */
+
+      else if (cmd==-26){
+        iii = (int *)(pmbuf->buff + ppp);
+        op1 = (gaint)(*iii);
+        iii = (int *)(pmbuf->buff + ppp + 1);
+        op2 = (gaint)(*iii);
+        if (!pflg && op2==lastscr) dsubs->gxdssh(op1);
+        ppp += 2;
+      }
+
       /* Any other command would be invalid */
 
       else {
@@ -739,6 +756,7 @@ struct gxmbuf *pmbuf;
     pmbuf->len = BWORKSZ;              /* set the buffer length */
     pmbuf->used = 0;                   /* initialize the buffer as unused */
     pmbuf->fpmbuf = NULL;              /* terminate the chain */
+    pmbuf->lastscr = 0;                /* no 'screen show' yet */
   }
   else {
     if (mbuflast->fpmbuf==NULL) {      /* no more buffers in the chain */
@@ -751,6 +769,7 @@ struct gxmbuf *pmbuf;
       pmbuf->len = BWORKSZ;            /* set the buffer length */
       pmbuf->used = 0;                 /* initialize the buffer as unused */
       pmbuf->fpmbuf = NULL;            /* terminate the chain */
+      pmbuf->lastscr = 0;
     }
     else {                             /* we'll just re-use what's already been chained up */
       pmbuf = mbuflast->fpmbuf;        /* get the next buffer in the chain */
@@ -785,9 +804,22 @@ gaint i;
     mbufanch = NULL;               /* no more metabuffer */
   } 
   else {
-    if (mbufanch) mbufanch->used = 0;
+    if (mbufanch) { mbufanch->used = 0; mbufanch->lastscr = 0; }
   }
   mbuflast = mbufanch;
+}
+
+/* Record a 'screen show' in the metafile buffer (-26: screen number and
+   sequence number), so that a redraw (e.g. after a window resize) paints
+   the saved screen again, scaled to the new window size. Only the last
+   'screen show' of a buffer is painted on redraw: it covers the whole
+   window, so the earlier ones would be painted over anyway. */
+
+void gxhscr (gaint num) {
+  if (mbuferror || mbufanch==NULL) return;
+  scrseq++;
+  hout2i(-26,num,scrseq);
+  if (!mbuferror && mbufanch) mbufanch->lastscr = scrseq;
 }
 
 void gxmbuferr() {

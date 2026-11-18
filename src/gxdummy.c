@@ -37,6 +37,8 @@ void gxdsgl () {}
 void gxdsignal (gaint a) {}
 void gxdssh (int a) {}
 void gxdssv (int a) {}
+gaint gxdsdp (int a, char *b) {printf("Error: the screen command does not work in batch mode\n"); return(1);}
+gaint gxdsld (int a, char *b) {printf("Error: the screen command does not work in batch mode\n"); return(1);}
 void gxdswp () {}
 void gxdwid (int a) {}
 void gxdXflush () {}

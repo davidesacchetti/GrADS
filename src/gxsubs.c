@@ -319,6 +319,11 @@ gaint gxload(char *gxdopt, char *gxpopt) {
   if ((err=dlerror())!=NULL) {printf("Error in gxload: %s\n",err); return(2);}
   dsubs.win_data = dlsym(dhandle,"win_data"); 
   if ((err=dlerror())!=NULL) {printf("Error in gxload: %s\n",err); return(2);}
+  /* optional symbols: older or other display plug-ins may not have them */
+  dsubs.gxdsdp   = dlsym(dhandle,"gxdsdp"); 
+  if (dlerror()!=NULL) dsubs.gxdsdp = NULL;
+  dsubs.gxdsld   = dlsym(dhandle,"gxdsld"); 
+  if (dlerror()!=NULL) dsubs.gxdsld = NULL;
   return(0);
 }
 

@@ -2180,6 +2180,42 @@ void gxdsfr (int frame) {
   }
 }
 
+/* 'screen dump N file': write saved screen N to a PNG file.
+   'screen load N file': read a PNG file (e.g. from 'screen dump' in another
+   session) into saved screen N; 'screen show N' paints it scaled to the
+   window. Return 0 on success, 1 on error. */
+
+gaint gxdsdp (int frame, char *fname) {
+cairo_status_t st;
+  if (!gxwscrok(frame)) return (1);
+  if (scrsav[frame]==NULL) {
+    printf ("Screen Error: screen %d has not been saved\n",frame);
+    return (1);
+  }
+  st = cairo_surface_write_to_png(scrsav[frame], fname);
+  if (st != CAIRO_STATUS_SUCCESS) {
+    printf ("Screen Error: unable to write %s: %s\n",fname,cairo_status_to_string(st));
+    return (1);
+  }
+  return (0);
+}
+
+gaint gxdsld (int frame, char *fname) {
+cairo_surface_t *sfc;
+cairo_status_t st;
+  if (!gxwscrok(frame)) return (1);
+  sfc = cairo_image_surface_create_from_png(fname);
+  st = cairo_surface_status(sfc);
+  if (st != CAIRO_STATUS_SUCCESS) {
+    printf ("Screen Error: unable to read %s: %s\n",fname,cairo_status_to_string(st));
+    cairo_surface_destroy(sfc);
+    return (1);
+  }
+  if (scrsav[frame]) cairo_surface_destroy(scrsav[frame]);
+  scrsav[frame] = sfc;
+  return (0);
+}
+
 /* Routine to install stipple pixmaps, a no-op */
 
 void gxdptn (int typ, int den, int ang) {

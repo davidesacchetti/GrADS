@@ -341,6 +341,8 @@ FILE *pdefid=NULL;
     if (cmpwrd("save",cmd)) i = 1;
     if (cmpwrd("show",cmd)) i = 2;
     if (cmpwrd("free",cmd)) i = 3;
+    if (cmpwrd("dump",cmd)) i = 4;
+    if (cmpwrd("load",cmd)) i = 5;
     if (i) {
       if ((cmd=nxtwrd(cmd)) == NULL) {
         gaprnt (0,"Screen Error: Missing screen number\n");
@@ -353,8 +355,31 @@ FILE *pdefid=NULL;
         goto retrn;
       }
       if (i==1) dsubs->gxdssv(fnum);
-      if (i==2) dsubs->gxdssh(fnum);
+      if (i==2) {
+        dsubs->gxdssh(fnum);
+        gxhscr(fnum);        /* redraw (e.g. window resize) shows it again, scaled */
+      }
       if (i==3) dsubs->gxdsfr(fnum);
+      if (i==4 || i==5) {
+        /* file name, mixed case: 4th word of the command */
+        ch = nxtwrd(com);
+        if (ch) ch = nxtwrd(ch);
+        if (ch) ch = nxtwrd(ch);
+        if (ch==NULL) {
+          gaprnt (0,"Screen Error: Missing file name\n");
+          retcod = 1;
+          goto retrn;
+        }
+        getwrd (pout,ch,1255);
+        if ((i==4 && dsubs->gxdsdp==NULL) || (i==5 && dsubs->gxdsld==NULL)) {
+          gaprnt (0,"Screen Error: screen dump/load not supported by this graphics display\n");
+          retcod = 1;
+          goto retrn;
+        }
+        if (i==4) retcod = dsubs->gxdsdp(fnum,pout);
+        else      retcod = dsubs->gxdsld(fnum,pout);
+        if (retcod) goto retrn;
+      }
       gxfrme(9);
     } else {
       gaprnt (0,"Screen Error: Unknown keyword\n");

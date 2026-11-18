@@ -237,6 +237,9 @@ struct gxdsubs {
   void (*gxrs1wd) (int,int);
   void (*gxsetpatt) (gaint);
   gaint (*win_data) (struct xinfo*);
+  /* optional: NULL if the display plug-in does not provide them */
+  gaint (*gxdsdp) (int,char*);   /* screen dump: write a saved screen to a PNG file */
+  gaint (*gxdsld) (int,char*);   /* screen load: read a saved screen from a PNG file */
 };
 
 /* Function prototypes for GX library routines  */
@@ -415,6 +418,7 @@ void hfull (void);
 gaint gxhwri (void *, int);
 void gxhfrm (int);
 void gxhdrw (gaint,gaint);
+void gxhscr (gaint);
 void gxddbl (void);
 gaint mbufget (void);
 void mbufrel (gaint);

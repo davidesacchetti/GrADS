@@ -2,7 +2,7 @@
 
 <html>
 <head>
-<title>GrADS Command: set wxopt</title>
+<title>GrADS Command: screen</title>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 <style type="text/css">
 body {
@@ -14,7 +14,8 @@ body {
 
 <h2><b>screen</b></h2>
 <p>
-<code>screen save|show|free <em>num</em></code>
+<code>screen save|show|free <em>num</em></code><br>
+<code>screen dump|load <em>num</em> <em>file.png</em></code>
 <p>
 This command allows the user to save the contents of the display window into a buffer in memory, and also to restore a saved buffer to the current display at any time. This command will work in double buffer mode and was written to facilitate animations when working interactively with GrADS. The options are as follows:
 <p>
@@ -36,11 +37,42 @@ This command allows the user to save the contents of the display window into a b
   Releases the contents of buffer # 
   <code><em>num</em></code> from memory. 
 </ul> 
+<p>
+<code>dump</code>
+<ul>
+  Writes buffer # <code><em>num</em></code> (from a previous
+  <code>screen save</code>) to the PNG file <code><em>file.png</em></code>.
+</ul> 
+<p>
+<code>load</code>
+<ul>
+  Reads the PNG file <code><em>file.png</em></code> (for example written by
+  <code>screen dump</code> in another session) into buffer #
+  <code><em>num</em></code>, to be drawn with <code>screen show</code>.
+</ul> 
 </ul>
 
 <p>
 <h3>Usage Notes</h3>
-<p>This command does not work in batch mode, or in version 2.1+ when Cairo is enabled. 
+<p>This command does not work in batch mode. With the Cairo display it works
+since version 2.2.5; <code>dump</code> and <code>load</code> are available only
+with the Cairo display.
+<p>If the window size differs from the one of the saved buffer (window resized,
+or buffer loaded from a file), <code>screen show</code> scales the buffer to the
+window. After a <code>screen show</code>, when the window is resized the last
+buffer shown is drawn again, scaled to the new size, together with everything
+drawn after it.
+<h3>Examples</h3>
+<pre>
+'d t'
+'screen save 1'
+'screen dump 1 background.png'
+</pre>
+and in another session:
+<pre>
+'screen load 1 background.png'
+'screen show 1'
+</pre>
 </body>
 </html>
 
