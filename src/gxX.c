@@ -2108,10 +2108,32 @@ void gxdxsz (gaint xx, gaint yy) {           /* resize the X window */
 }
 
 void gxdrdw (void) {                        /* Redraw when user resizes window */
+cairo_surface_t *sfc2;
   rstate = 0;
   cairo_xlib_surface_set_size(surface, width, height);
   gxCrsiz (width, height);
-  gxhdrw(0,0);
+  if (dblmode && surface2) {
+    /* The background pixmap has the size the window had when double
+       buffering was turned on: replace it with one of the new size.
+       In double buffer mode the metabuffer of the displayed image is the
+       second one (gxhdrw(1,..)); the first one holds the frame being drawn. */
+    sfc2 = cairo_surface_create_similar (surface, CAIRO_CONTENT_COLOR_ALPHA, width, height);
+    if (cairo_surface_status(sfc2) == CAIRO_STATUS_SUCCESS) {
+      gxCsfc(sfc2);                        /* releases the context on the old pixmap */
+      cairo_surface_destroy(surface2);
+      surface2 = sfc2;
+      drwbl = drwbl2 = cairo_xlib_surface_get_drawable(surface2);
+      gxCfrm();
+      gxhdrw(1,0);                         /* displayed image, drawn in the background */
+      gxCswp(surface,surface2);            /* and copied to the window in one operation */
+      gxCfrm();
+      gxhdrw(0,0);                         /* frame being drawn */
+    } else {
+      cairo_surface_destroy(sfc2);
+      gxhdrw(0,0);
+    }
+  }
+  else gxhdrw(0,0);
   gxrdrw(0);
   if (dblmode) gxrdrw(1);
   rstate = 1;

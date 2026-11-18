@@ -80,6 +80,14 @@
       swaps, now 42 MB); the background is copied to the window in one
       operation and a pending path is stroked before the copy.
 
+    Fixes (2026-11-18, release 2.2.5-11):
+    * Cairo display, double buffering: when the window is resized the
+      background pixmap is recreated with the new size (it kept the size
+      of 'set dbuff on', so the enlarged part of the window stayed black)
+      and the displayed image is redrawn from its own metabuffer, scaled,
+      including a 'screen show'; the frame being drawn is redrawn in the
+      background. 'set dbuff on/off' no longer leaks a cairo context.
+
 2025-11-19 Version 2.2.4
 
     Updates:

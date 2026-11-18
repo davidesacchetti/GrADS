@@ -521,6 +521,8 @@ cairo_surface_t *sfc2=NULL;     /* Surface for fgImage */
 /* Make this X surface active for drawing */
 
 void gxCsfc (cairo_surface_t *Xsfc) {
+  gxCflush(0);
+  if (cr) cairo_destroy(cr);   /* the previous context was never released */
   surface = Xsfc;
   surftype = 1;
   Xsurface = surface;

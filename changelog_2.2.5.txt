@@ -146,3 +146,15 @@ Aggiornamento del 18 novembre: release 2.2.5-10
 23. release 2.2.5-10
 
 - grads.spec, opengrads.spec: release 10 e voce nel changelog. ChangeLog e readme_dvd.txt aggiornati.
+
+Aggiornamento del 18 novembre: release 2.2.5-11
+
+24. ridimensionamento della finestra in double buffer
+
+- src/gxX.c (gxdrdw): in double buffer il buffer nascosto e' una pixmap X creata con la dimensione della finestra al momento di 'set dbuff on' e non veniva ricreata quando la finestra veniva ridimensionata: ogni swap copiava solo quel rettangolo e il resto della finestra restava nero (ad esempio la finestra verticale dello skew di essl_skew.gs ingrandita). Inoltre il ridisegno ripartiva dal buffer dei comandi grafici del fotogramma in preparazione invece che da quello visualizzato. Ora la pixmap viene ricreata con la nuova dimensione, l'immagine visualizzata viene ridisegnata in scala (compreso lo screen show dello sfondo) e copiata nella finestra in una sola operazione, e il fotogramma in preparazione viene ridisegnato nel buffer nascosto.
+- src/gxC.c (gxCsfc): rilasciato il contesto cairo precedente a ogni 'set dbuff on/off' e al ridimensionamento.
+- Provato sul display: finestra verticale da 400x560 a 700x900 dopo cinque cicli screen show + draw + swap; con la 2.2.5-10 circa meta' della finestra restava nera, ora nessun pixel nero, sia subito dopo il ridimensionamento sia dopo lo swap successivo. 300 cicli di dbuff on/off alternati a ridimensionamenti e gxprint: immagine identica a prima, memoria stabile.
+
+25. release 2.2.5-11
+
+- grads.spec, opengrads.spec: release 11 e voce nel changelog. ChangeLog e readme_dvd.txt aggiornati.

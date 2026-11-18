@@ -188,6 +188,9 @@ cat udpt | sed -e 's|GRADSPREFIX|%{_prefix}|g' > $RPM_BUILD_ROOT%{_datadir}/%{na
 %endif
 
 %changelog
+* Wed Nov 18 2026 ARPAL Sistemi CMI <sistemi.cmi@arpal.liguria.it> - 2.2.5-11
+- Cairo display, double buffering: window resize recreates the background
+  pixmap and redraws the displayed image scaled (enlarged part was black)
 * Wed Nov 18 2026 ARPAL Sistemi CMI <sistemi.cmi@arpal.liguria.it> - 2.2.5-10
 - Cairo display: 'swap' no longer leaks two cairo contexts per call; the
   background buffer is copied to the window in one operation
