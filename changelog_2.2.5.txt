@@ -103,3 +103,21 @@ Aggiornamento del 17 novembre: release 2.2.5-7
 16. release 2.2.5-7
 
 - grads.spec, opengrads.spec: release 7 e voce nel changelog. ChangeLog e readme_dvd.txt aggiornati. Le due funzioni sono nell'RPM costruito con opengrads.spec, che compila le estensioni ARPAL; grads.spec non le compila.
+
+Aggiornamento del 18 novembre: release 2.2.5-8
+
+17. 9d1d469: screen dump/load e screen show al ridimensionamento della finestra
+
+- src/gauser.c, src/gxX.c: 'screen dump N file.png' scrive su file PNG lo schermo salvato N con screen save; 'screen load N file.png' lo rilegge, anche in un'altra sessione o istanza di GrADS, e 'screen show N' lo adatta alla finestra se ha una dimensione diversa. Solo con il display Cairo: i due nuovi simboli del plugin (gxdsdp, gxdsld) sono opzionali in src/gxsubs.c, quindi il display X11 e plugin precedenti si caricano lo stesso e il comando da' un messaggio di errore. In batch il comando screen continua a dare "does not work in batch mode" (src/gxdummy.c).
+- src/gxmeta.c, src/gx.h: screen show viene registrato nel buffer dei comandi grafici (codice -26 con numero dello schermo e numero progressivo). Quando la finestra viene ridimensionata, GrADS ridisegna dal buffer: l'ultimo screen show viene ridipinto in scala e sopra tutto quello disegnato dopo (marker, linee, testi). Solo l'ultimo screen show del buffer viene dipinto: copre tutta la finestra, e cosi' il ridisegno resta veloce anche dopo migliaia di screen show (come con il marker che segue il puntatore). printim e gxprint non includono l'immagine di screen show, come prima.
+- doc/gradcomdscreen.html: documentati dump e load, il comportamento al ridimensionamento ed esempi.
+- Provato sul display con due sessioni: dump, ridimensionamento da 700x540 a 1100x850, load nella seconda sessione e nuovo ridimensionamento.
+
+18. 4110bf0: grfill piu' veloce
+
+- src/gagx.c (gagfil, gacntr), src/grads.h: con 'set gxout grfill' ogni cella era un poligono riempito a se'; ora in ogni riga i tratti di celle consecutive con lo stesso colore sono un solo poligono. Con le proiezioni latlon e scaled e nei grafici non cartografici (sezioni, Hovmoller) il tratto e' un rettangolo (4 vertici); con nps, sps, lambert, robinson ecc. il poligono segue i bordi di tutte le celle del tratto, quindi il risultato e' esatto.
+- Griglia di prova 2400x1600, 12 classi, rumore e un'area undef, batch da open a printim: latlon da 1.07 a 0.22 s (shaded 0.77 s), nps da 1.60 a 0.56 s (shaded 0.87 s); immagini identiche pixel per pixel. Il guadagno vale anche per il ridisegno della finestra e per printim, perche' il buffer dei comandi grafici e' piu' corto.
+
+19. release 2.2.5-8
+
+- grads.spec, opengrads.spec: release 8 e voce nel changelog. ChangeLog e readme_dvd.txt aggiornati.

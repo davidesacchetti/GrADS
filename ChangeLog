@@ -57,6 +57,17 @@
       variable in expr (e.g. t.2, defined variables), otherwise the default
       file; global grids wrap in longitude.
 
+    Updates (2026-11-18, release 2.2.5-8):
+    * 'screen dump N file.png' writes saved screen N to a PNG file and
+      'screen load N file.png' reads it back, also in another session;
+      'screen show' scales it to the window (Cairo display only).
+    * After a 'screen show', when the window is resized the last screen
+      shown is drawn again, scaled to the new size, together with
+      everything drawn after it.
+    * 'set gxout grfill' is much faster on large grids: consecutive cells
+      of a row with the same color are filled as one polygon (3-5 times
+      faster on a 2400x1600 grid, identical image).
+
 2025-11-19 Version 2.2.4
 
     Updates:

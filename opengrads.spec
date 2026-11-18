@@ -18,7 +18,7 @@
 #
 Name:           grads
 Version:        2.2.5
-Release:        7%{?dist}
+Release:        8%{?dist}
 Summary:        Tool for easy acces, manipulation, and visualization of data
 
 Group:          Applications/Engineering
@@ -188,6 +188,12 @@ cat udpt | sed -e 's|GRADSPREFIX|%{_prefix}|g' > $RPM_BUILD_ROOT%{_datadir}/%{na
 %endif
 
 %changelog
+* Wed Nov 18 2026 ARPAL Sistemi CMI <sistemi.cmi@arpal.liguria.it> - 2.2.5-8
+- 'screen dump N file.png' and 'screen load N file.png': saved screens to
+  and from PNG files (Cairo display); after a 'screen show' the window is
+  redrawn with the screen scaled when it is resized
+- 'set gxout grfill' much faster on large grids (cells of the same color
+  filled as one polygon per row run)
 * Tue Nov 17 2026 ARPAL Sistemi CMI <sistemi.cmi@arpal.liguria.it> - 2.2.5-7
 - ARPAL extensions (libdvd.gex): bilin(expr,lon,lat) and bicub(expr,lon,lat),
   bilinear and bicubic interpolation of expr at a lon,lat point; the result
