@@ -3,5 +3,17 @@
 <h2>swap</h2>
 swaps buffers, when double buffer mode is <code>on</code><p>
 <h3>Usage Notes</h3>
+<p>In version 2.2.5 (ARPAL), with the Cairo display, <code>swap</code> copies the hidden buffer to the window in a single operation, without leaking memory, and clears the hidden buffer (like <code>clear</code>, but without turning double buffering off). When the window is resized the hidden buffer is recreated with the new size and the image on display is redrawn to scale.
+<p>Do not use <code>clear</code> inside an animation loop: it turns double buffering off and the drawing goes to the visible window (flickering). A common pattern is to save a background with <a href="gradcomdscreen.html">screen save</a> and to draw it with <code>screen show</code> at each frame:
+<pre>
+'d background_field'
+'screen save 99'
+'set dbuff on'
+while (...)
+  'screen show 99'
+  ... draw the frame ...
+  'swap'
+endwhile
+</pre>
 <h3>Examples</h3>
 

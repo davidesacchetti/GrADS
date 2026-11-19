@@ -1,0 +1,150 @@
+<!--ARPAL addition to the GrADS 2.2.5 documentation.-->
+
+<html>
+<head>
+<title>GrADS Utilities: tif2ctl</title>
+<link href="GrADS.css" rel="stylesheet" type="text/css">
+<style type="text/css">
+.red {
+	color: #900;
+}
+</style>
+</head>
+<body bgcolor="e0f0ff" text="000000">
+<h2><a name="tif2ctl">tif2ctl</a></h2>
+<code>tif2ctl [<i>options</i>] <i>file.tif</i> [<i>file.ctl</i>]</code>
+
+<p>
+<code>tif2ctl</code> is an external utility (<span class="red">GrADS
+2.2.5-13</span>, ARPAL) that writes a data descriptor file to open a
+GeoTIFF raster in GrADS.
+
+<p>
+GrADS cannot read TIFF files, but an uncompressed GeoTIFF in geographic
+coordinates, organized in contiguous strips, is a plain binary grid preceded
+by a header. For such a file <code>tif2ctl</code> writes a descriptor that
+points directly to the <code>.tif</code>, without copying the data:
+
+<ul>
+<li><code>FILEHEADER</code> is the offset of the first strip of data;
+<li><code>OPTIONS yrev</code>, because the rows of a GeoTIFF go from north
+to south, and <code>little_endian</code> or <code>big_endian</code>
+according to the byte order of the file;
+<li><code>XDEF</code> and <code>YDEF</code> are the centers of the cells,
+computed from the GeoTIFF tags (ModelPixelScale, ModelTiepoint,
+PixelIsArea or PixelIsPoint);
+<li><code>UNDEF</code> is the nodata value of the file (GDAL_NODATA tag);
+<li>the data type is given in the <i>units</i> field of the variable
+(see <a href="descriptorfile.html#VARS">VARS</a>):
+<code>99</code> for Float32, <code>-1,40,1</code> for Byte,
+<code>-1,40,2</code> for UInt16, <code>-1,40,2,-1</code> for Int16,
+<code>-1,40,4</code> for Int32.
+</ul>
+
+<p>
+In the other cases the file is converted with GDAL into a raw binary file
+(<code>.bin</code>, ENVI format, with its <code>.hdr</code>) next to the
+descriptor:
+<ul>
+<li>compressed data, tiled images, bands interleaved by pixel, bands of
+different types: <code>gdal_translate</code>;
+<li>data types not supported by GrADS (Int8, UInt32, Float64, ...):
+<code>gdal_translate -ot Float32</code>;
+<li>projected coordinates (UTM, Lambert, ...) or rotated grids:
+<code>gdalwarp</code> to a regular lat-lon grid (EPSG:4326), Float32.
+</ul>
+The TIFF and GeoTIFF tags are read by <code>tif2ctl</code> itself (python 3
+standard library): GDAL is needed only for the conversions.
+
+<p>
+The options are:
+<ul>
+<code>-v <i>name</i></code>
+<ul>Name of the variable. The default is the name of the file, in lower
+case, without the characters not allowed by GrADS.</ul>
+<code>-u <i>value</i></code>
+<ul>Undefined value. The default is the nodata value of the file,
+otherwise -9.99e8.</ul>
+<code>-b vars|levels|times</code>
+<ul>How to describe a file with more than one band: one variable for each
+band (default, names <i>name</i>1, <i>name</i>2, ...), one variable with the
+bands as Z levels (1, 2, ...), or one variable with the bands as times.</ul>
+<code>-t <i>time</i></code>
+<ul>Initial time of TDEF (default <code>00z01jan2000</code>).</ul>
+<code>-i <i>increment</i></code>
+<ul>Time increment of TDEF (default <code>1dy</code>), used with
+<code>-b times</code>.</ul>
+<code>-c</code>
+<ul>Always convert with GDAL, also when the file could be read
+directly.</ul>
+<code>-s <i>srs</i></code>
+<ul>Reproject to this coordinate system with <code>gdalwarp</code>
+(for example <code>EPSG:4326</code>).</ul>
+<code>-r <i>method</i></code>
+<ul>Resampling method of <code>gdalwarp</code> (default <code>near</code>;
+<code>bilinear</code>, <code>cubic</code>, <code>average</code>, ...).</ul>
+<code>--res <i>degrees</i></code>
+<ul>Grid spacing of the reprojected grid, in degrees (default: chosen by
+<code>gdalwarp</code>).</ul>
+<code>-o <i>dir</i></code>
+<ul>Directory where the descriptor (and the converted file) are written.</ul>
+</ul>
+The descriptor is <code><i>file</i>.ctl</code> in the current directory
+unless a name is given. The <code>DSET</code> record uses the
+<code>^</code> notation, so the descriptor and the data can be moved
+together.
+
+<p>
+<b>Usage Notes</b>
+<ol>
+<li>A descriptor pointing to the <code>.tif</code> stays valid only as long
+as the file is not rewritten: if the GeoTIFF changes (for example a new
+version of the same product), run <code>tif2ctl</code> again.
+<p>
+<li>A GeoTIFF has no time information: the TDEF record is a placeholder
+that can be changed with <code>-t</code> and <code>-i</code>, or edited by
+hand. To aggregate a series of GeoTIFF files with the same grid, write the
+descriptor for the first one and use a <a href="templates.html">template</a>
+in the DSET record, adding <code>template</code> to OPTIONS (all the files
+must have the same header length, which is true for files written by the
+same program).
+<p>
+<li>Reprojection with <code>gdalwarp</code> resamples the data: with the
+default <code>near</code> method the values are not changed, but a cell
+may be moved to the nearest cell of the new grid. Use
+<code>-r bilinear</code> for continuous fields.
+<p>
+<li>In GrADS the descriptor of a GeoTIFF is opened like any other binary
+data set: <code>open <i>file</i>.ctl</code>.
+</ol>
+
+<p>
+<b>Examples</b>
+<pre>
+$ tif2ctl dem_liguria.tif
+tif2ctl: dem_liguria.tif letto direttamente (FILEHEADER 384)
+tif2ctl: scritto dem_liguria.ctl
+
+$ cat dem_liguria.ctl
+DSET ^dem_liguria.tif
+TITLE dem_liguria
+UNDEF -9999
+FILEHEADER 384
+OPTIONS yrev little_endian
+XDEF 40 LINEAR 7.05 0.1
+YDEF 20 LINEAR 43.05 0.1
+ZDEF 1 LINEAR 1 1
+TDEF 1 LINEAR 00z01jan2000 1dy
+VARS 1
+dem_liguria     0 99 dem_liguria.tif
+ENDVARS
+
+$ tif2ctl -v rain -r bilinear radar_utm32.tif radar.ctl
+tif2ctl: radar_utm32.tif da convertire: proiezione non geografica
+tif2ctl: gdalwarp ... radar_utm32.tif radar.bin
+tif2ctl: scritto radar.ctl
+
+$ tif2ctl -b times -t 00z19nov2026 -i 1hr rain_24bands.tif
+</pre>
+</body>
+</html>

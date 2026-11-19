@@ -106,6 +106,8 @@ find data/tables -type f -exec install -p -m644 "{}" $RPM_BUILD_ROOT%{_datadir}/
 # Populate shapefiles directory
 %{__install} -d -m755 $RPM_BUILD_ROOT%{_datadir}/%{name}/shapefiles
 %{__install} -p -m644 shapefiles/* $RPM_BUILD_ROOT%{_datadir}/%{name}/shapefiles
+# ARPAL utilities (tif2ctl: descrittori GrADS per i GeoTIFF)
+%{__install} -p -m755 arpal/bin/tif2ctl $RPM_BUILD_ROOT%{_bindir}
 
 # Remove obsolete .la files
 rm -f %{buildroot}%{_libdir}/*.la
@@ -159,6 +161,7 @@ cat udpt | sed -e 's|GRADSPREFIX|%{_prefix}|g' > $RPM_BUILD_ROOT%{_datadir}/%{na
 %{_bindir}/grib2scan
 %{_bindir}/gribscan
 %{_bindir}/stnmap
+%{_bindir}/tif2ctl
 %{_libdir}/libgradspy.so
 %{_libdir}/libgradspy.so.2
 %{_libdir}/libgradspy.so.2.0.0

@@ -1,0 +1,92 @@
+<!--ARPAL addition to the GrADS 2.2.5 documentation (libdvd.gex extension).-->
+
+<html>
+<head>
+<title>GrADS Functions: bilin, bicub</title>
+<link href="GrADS.css" rel="stylesheet" type="text/css">
+<style type="text/css">
+.red {
+	color: #900;
+}
+</style>
+</head>
+<body text="#000000" bgcolor="e0f0ff">
+
+<h2><b>bilin(), bicub()</b></h2>
+<p>
+These functions interpolate an expression at a point given by longitude
+and latitude. The syntax is:
+
+<p>
+<ul>
+<code>bilin(<i>expr</i>, <i>lon</i>, <i>lat</i>)</code><br>
+<code>bicub(<i>expr</i>, <i>lon</i>, <i>lat</i>)</code>
+</ul>
+<p>
+<ul>
+<code><i>expr</i>&nbsp;&nbsp;&nbsp;&nbsp;</code> any valid GrADS expression<br>
+<code><i>lon</i>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code> longitude of the point<br>
+<code><i>lat</i>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</code> latitude of the point<br>
+</ul>
+
+<p>
+<code>bilin</code> performs a bilinear interpolation from the 4 grid points
+around the point. <code>bicub</code> performs a bicubic interpolation
+(Keys kernel, Catmull-Rom) from the 16 grid points around the point.
+
+<p>
+<h3>Usage Notes</h3>
+<p>
+<ol>
+<li>These functions are ARPAL extensions in the <code>libdvd.gex</code>
+library (<span class="red">GrADS 2.2.5-7</span>). They are available when
+the ARPAL extensions are installed and listed in the user defined extension
+table (<a href="udpt.html">UDPT</a>).
+
+<p>
+<li>Longitude and latitude must be fixed in the dimension environment. The
+result varies like the other dimensions: a vertical profile (Z varying), a
+time series (T varying), a Z-T section or a single value. It can be
+displayed or defined like any other GrADS result.
+
+<p>
+<li>With <code>bilin</code>, if one of the grid points with a non zero
+weight is missing the result is undefined. With <code>bicub</code>, where
+one of the 12 outer points is missing (domain border, undefined values) the
+bilinear interpolation is used.
+
+<p>
+<li>The reference grid is the one of the file of the first variable in
+<code><i>expr</i></code> (for example <code>t.2</code>, or a defined
+variable), otherwise the default file. Global grids wrapping in longitude
+are supported.
+
+<p>
+<li>Unlike <code>set lon</code> / <code>set lat</code> alone, which select the
+nearest grid point, these functions give a value that changes smoothly
+with the position of the point: they are used for the vertical profiles of
+the skew-T diagrams.
+</ol>
+
+<p>
+<h3>Examples</h3>
+<p>
+Vertical profile of temperature (in Celsius) at a point, with smooth
+interpolation:
+<pre>
+set lon 8.93
+set lat 44.41
+set lev 1000 200
+define temp = bicub(t-273.16, 8.93, 44.41)
+d temp
+</pre>
+Time series of the bilinear interpolation of the 2-m temperature:
+<pre>
+set lon 8.93
+set lat 44.41
+set t 1 last
+d bilin(t2m, 8.93, 44.41)
+</pre>
+
+</body>
+</html>

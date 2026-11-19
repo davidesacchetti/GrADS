@@ -47,13 +47,24 @@ vertical profiles.
 <p>
 <li><code>coll2gr</code> produces an output grid that varies in X and Z;
 the dimension environment used when <code>coll2gr</code> is invoked
-must also be X and Z varying. The X axis of the output grid will contain
+must also be X and Z varying (but see the next note). The X axis of the output grid will contain
 the equally spaced station profiles and will span the range of the
 current X dimension environment. The Z axis of the output grid will
 span the range of the current Z dimension environment and will have
 either the specified number of levels or a union of the levels. Data
 points outside of the range of levels will be used for interpolating
 to within the range if appropriate.
+
+<p>
+<li><span class="red">Version 2.2.5 (ARPAL)</span>: when only X is varying
+(Z fixed), <code>coll2gr</code> returns a 1-D section along the collected
+stations: one value for each station, at the level of the dimension
+environment (linear interpolation between the levels of the station). A
+station with a single value (collected with all dimensions fixed, see
+<a href="gradcomdcollect.html"><code>collect</code></a>) gives that value.
+This allows oblique sections of variables that do not depend on Z, and
+the <code>define</code> of X-Z sections, because <code>define</code>
+evaluates the expression one level at a time.
 
 <p>
 <li>The <code>"-u"</code> option will only work for data in pressure
@@ -69,6 +80,26 @@ information.
 </ol>
 <p>
 <h3>Examples </h3>
+<p>
+Oblique section of a 2-D variable (2-m temperature) along 20 points from
+(7.5E,44N) to (10E,44.5N), collected with all dimensions fixed:
+<pre>
+'set lon 7.5'
+'set lat 44'
+'set z 1'
+'set t 1'
+'collect 1 free'
+i=1
+while (i&lt;=20)
+  lon = 7.5 + (i-1)*2.5/19
+  lat = 44 + (i-1)*0.5/19
+  'collect 1 gr2stn(t2m,'lon','lat')'
+  i=i+1
+endwhile
+'set x 1 20'
+'set z 1'
+'d coll2gr(1)'
+</pre>
 
 
 </body>

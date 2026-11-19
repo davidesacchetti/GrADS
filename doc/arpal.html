@@ -1,0 +1,86 @@
+<!--ARPAL addition to the GrADS 2.2.5 documentation.-->
+
+<html>
+<head>
+<title>GrADS 2.2.5: ARPAL additions</title>
+<link href="GrADS.css" rel="stylesheet" type="text/css">
+<style type="text/css">
+.red {
+	color: #900;
+}
+</style>
+</head>
+<body bgcolor="e0f0ff" text="#000000">
+
+<h2>GrADS 2.2.5: ARPAL additions</h2>
+
+<p class="plaintext">
+This page lists the features added to GrADS 2.2.5 in the ARPAL fork
+(github.com/davidesacchetti/GrADS, branch 2.2.5), with the release in which
+each one appeared (2.2.5-<i>N</i>). The complete list of changes is in the
+files <code>ChangeLog</code> and <code>changelog_2.2.5.txt</code> of the
+source tree. Use <a href="gradcomdquery.html"><code>q config</code></a> to
+see the installed release.
+
+<h3>Display (Cairo plug-in)</h3>
+<ul>
+<li><b>Widgets on the Cairo display</b> (2.2.5-1..5): buttons
+(<a href="gradcomddrawbutton.html">draw button</a>,
+<a href="gradcomdredrawbutton.html">redraw button</a>,
+<a href="gradcomdsetbutton.html">set button</a>), drop menus with cascades
+(<a href="gradcomddrawdropmenu.html">draw dropmenu</a>,
+<a href="gradcomdsetdropmenu.html">set dropmenu</a>), rubber banding
+(<a href="gradcomdsetrband.html">set rband</a>), dialog boxes
+(<a href="gradcomdqdialog.html">q dialog</a>) and
+<a href="gradcomdscreen.html">screen save/show/free</a>, before available
+only with the X11 display. The submenus open after the pointer rests about
+300 ms on an item, and the menus are drawn without flickering.
+<li><b><a href="gradcomdqpos.html">q pos pointer</a></b> (2.2.5-6): position
+of the mouse without waiting for a click; -999.9 outside the window.
+<li><b><a href="gradcomdqpos.html">q pos keys</a></b> (2.2.5-12): key presses
+in the graphics window (class 4, X keysym: arrows 65361-65364). Without
+<code>keys</code> the keys are ignored as before.
+<li><b><a href="gradcomdscreen.html">screen dump / screen load</a></b>
+(2.2.5-8): saved screens written to PNG files and read back, also in another
+session; <code>screen show</code> scales the buffer to the window.
+<li><b>Double buffering</b> (<a href="gradcomdsetdbuff.html">set dbuff</a>,
+<a href="gradcomdswap.html">swap</a>, 2.2.5-10, 2.2.5-11): no memory leak at
+each swap; when the window is resized the hidden buffer is recreated and the
+displayed image is redrawn to scale.
+<li><b><code>set gxout grfill</code></b> (2.2.5-8): 3-5 times faster on large
+grids, same image.
+<li><b><a href="gradcomdgrads.html">-d</a> option</b> (2.2.5-6): the choice of
+the display plug-in (for example <code>grads -d X11</code>) works again.
+</ul>
+
+<h3>Functions and commands</h3>
+<ul>
+<li><b><a href="gradcomdcollect.html">collect</a></b> with all dimensions fixed
+and <b><a href="gradfunccoll2gr.html">coll2gr()</a></b> with only X varying
+(2.2.5-1): 1-D sections, oblique sections of variables not depending on Z,
+<code>define</code> of X-Z sections.
+<li><b><a href="gradfuncbilin.html">bilin(), bicub()</a></b> (2.2.5-7):
+bilinear and bicubic interpolation at a point (ARPAL extension
+<code>libdvd.gex</code>).
+<li><b><a href="gradcomdquery.html">q config</a></b> (2.2.5-9): a line with the
+complete release, for example <code>Release 2.2.5-12.fc44</code>.
+</ul>
+
+<h3>Data</h3>
+<ul>
+<li><b><a href="gradutiltif2ctl.html">tif2ctl</a></b> (2.2.5-13): descriptor
+files to open GeoTIFF rasters, read directly when possible, otherwise
+converted with GDAL.
+<li>Map files <code>hres_world</code>, <code>lres_world</code>,
+<code>mres_world</code> installed in the GrADS data directory (2.2.5-2),
+to be used with <a href="gradcomdsetmpdset.html">set mpdset</a>.
+</ul>
+
+<h3>GradsPy</h3>
+<ul>
+<li><code>result()</code> with the regridding functions (re, re2) no longer
+crashes and returns the coordinates of the regridded grid (2.2.5-5).
+</ul>
+
+</body>
+</html>

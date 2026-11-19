@@ -1,0 +1,364 @@
+#!/usr/bin/python3
+# -----------------------------------------------------------------------------
+# tif2ctl: descrittore GrADS (.ctl) per un GeoTIFF                  ARPAL 2.2.5
+#
+# GrADS non legge i TIFF, ma un GeoTIFF non compresso, a strisce contigue e
+# in coordinate geografiche e' un binario "piatto" preceduto da un header:
+# basta un ctl con FILEHEADER (offset dei dati), OPTIONS yrev (righe da nord
+# a sud) e l'endianness del file. In questo caso il ctl punta direttamente al
+# .tif, senza copiare i dati.
+#
+# Negli altri casi (compressione, tile, bande interlacciate per pixel,
+# proiezione non geografica, tipi non supportati da GrADS) il GeoTIFF viene
+# convertito con GDAL (gdal_translate o gdalwarp) in un binario grezzo
+# accanto al ctl.
+#
+# I tag TIFF/GeoTIFF sono letti con la sola libreria standard di python:
+# GDAL serve solo per le conversioni.
+#
+# uso: tif2ctl [opzioni] file.tif [file.ctl]
+#      tif2ctl -h  per l'elenco delle opzioni
+# -----------------------------------------------------------------------------
+import argparse
+import os
+import re
+import shutil
+import struct
+import subprocess
+import sys
+
+# tipi TIFF -> (formato struct, dimensione)
+TIFF_TYPES = {1: ('B', 1), 2: ('c', 1), 3: ('H', 2), 4: ('I', 4), 5: ('II', 8),
+              6: ('b', 1), 7: ('B', 1), 8: ('h', 2), 9: ('i', 4), 10: ('ii', 8),
+              11: ('f', 4), 12: ('d', 8), 16: ('Q', 8), 17: ('q', 8), 18: ('Q', 8)}
+
+# (SampleFormat, BitsPerSample) -> (nome, campo units del ctl)
+# SampleFormat: 1 unsigned, 2 signed, 3 floating point
+GRADS_TYPES = {(1, 8): ('Byte', '-1,40,1'),
+               (1, 16): ('UInt16', '-1,40,2'),
+               (2, 16): ('Int16', '-1,40,2,-1'),
+               (2, 32): ('Int32', '-1,40,4'),
+               (3, 32): ('Float32', '99')}
+
+UNDEF_DEFAULT = -9.99e8
+
+
+def die(msg):
+    sys.exit('tif2ctl: ' + msg)
+
+
+def read_tiff(path):
+    """Legge i tag della prima IFD (l'immagine principale, non le overview)."""
+    with open(path, 'rb') as f:
+        head = f.read(16)
+        if head[:2] == b'II':
+            bo = '<'
+        elif head[:2] == b'MM':
+            bo = '>'
+        else:
+            die(path + ': non e\' un file TIFF')
+        magic = struct.unpack(bo + 'H', head[2:4])[0]
+        if magic == 42:
+            big = False
+            ifd = struct.unpack(bo + 'I', head[4:8])[0]
+        elif magic == 43:
+            big = True
+            ifd = struct.unpack(bo + 'Q', head[8:16])[0]
+        else:
+            die(path + ': non e\' un file TIFF')
+        f.seek(ifd)
+        if big:
+            n = struct.unpack(bo + 'Q', f.read(8))[0]
+            esize, inl = 20, 8
+        else:
+            n = struct.unpack(bo + 'H', f.read(2))[0]
+            esize, inl = 12, 4
+        raw = f.read(n * esize)
+        tags = {}
+        for i in range(n):
+            e = raw[i * esize:(i + 1) * esize]
+            if big:
+                tag, typ, cnt = struct.unpack(bo + 'HHQ', e[:12])
+                vbytes = e[12:20]
+            else:
+                tag, typ, cnt = struct.unpack(bo + 'HHI', e[:8])
+                vbytes = e[8:12]
+            if typ not in TIFF_TYPES:
+                continue
+            fmt, size = TIFF_TYPES[typ]
+            nbytes = size * cnt
+            if nbytes <= inl:
+                data = vbytes[:nbytes]
+            else:
+                off = struct.unpack(bo + ('Q' if big else 'I'), vbytes)[0]
+                pos = f.tell()
+                f.seek(off)
+                data = f.read(nbytes)
+                f.seek(pos)
+            if typ == 2:
+                val = data.split(b'\0')[0].decode('latin-1')
+            else:
+                val = list(struct.unpack(bo + fmt * cnt, data))
+            tags[tag] = val
+    return bo, tags
+
+
+def geokeys(tags):
+    """GeoKeyDirectory (34735) -> {chiave: valore} per le chiavi SHORT."""
+    gk = tags.get(34735)
+    keys = {}
+    if not gk:
+        return keys
+    for i in range(1, gk[3] + 1):
+        key, loc, cnt, val = gk[4 * i:4 * i + 4]
+        if loc == 0:
+            keys[key] = val
+    return keys
+
+
+def tiff_info(path):
+    bo, tags = read_tiff(path)
+    t1 = lambda t, d=None: tags[t][0] if t in tags else d
+    nx, ny = t1(256), t1(257)
+    if nx is None or ny is None:
+        die(path + ': dimensioni dell\'immagine mancanti')
+    nb = t1(277, 1)
+    bits = tags.get(258, [1])
+    sfmt = tags.get(339, [1])
+    info = {
+        'byteorder': bo, 'nx': nx, 'ny': ny, 'nb': nb,
+        'bits': bits[0], 'sfmt': sfmt[0],
+        'uniform': len(set(bits)) == 1 and len(set(sfmt)) == 1,
+        'compression': t1(259, 1), 'planar': t1(284, 1),
+        'tiled': 322 in tags,
+        'offsets': tags.get(273), 'counts': tags.get(279),
+        'nodata': None, 'geo': None, 'geographic': False,
+        'transform': 34264 in tags,
+    }
+    nd = tags.get(42113)  # GDAL_NODATA, testo
+    if nd is not None:
+        try:
+            info['nodata'] = float(nd.strip())
+        except ValueError:
+            pass
+    keys = geokeys(tags)
+    # GTModelTypeGeoKey: 2 = geografico (lat/lon)
+    info['geographic'] = keys.get(1024) == 2
+    # GTRasterTypeGeoKey: 2 = PixelIsPoint (i tiepoint sono centri di cella)
+    info['pixel_is_point'] = keys.get(1025) == 2
+    scale, tie = tags.get(33550), tags.get(33922)
+    if scale and tie and len(tie) >= 6:
+        dx, dy = scale[0], scale[1]
+        i0, j0, x0, y0 = tie[0], tie[1], tie[3], tie[4]
+        if info['pixel_is_point']:
+            # x0,y0 e' il centro della cella i0,j0
+            west = x0 - i0 * dx - dx / 2.
+            north = y0 + j0 * dy + dy / 2.
+        else:
+            west = x0 - i0 * dx
+            north = y0 + j0 * dy
+        info['geo'] = (west, dx, north, dy)
+    return info
+
+
+def direct_reason(info):
+    """None se GrADS puo' leggere direttamente il tif, altrimenti il motivo."""
+    if info['transform'] or info['geo'] is None:
+        return 'georeferenziazione non regolare (ModelTransformation o tiepoint mancanti)'
+    if not info['geographic']:
+        return 'proiezione non geografica'
+    if info['compression'] != 1:
+        return 'dati compressi (Compression=%d)' % info['compression']
+    if info['tiled']:
+        return 'immagine a tile'
+    if not info['uniform']:
+        return 'bande di tipo diverso'
+    if (info['sfmt'], info['bits']) not in GRADS_TYPES:
+        return 'tipo di dato non supportato da GrADS (SampleFormat=%d, %d bit)' % (
+            info['sfmt'], info['bits'])
+    if info['nb'] > 1 and info['planar'] != 2:
+        return 'bande interlacciate per pixel'
+    offs, cnts = info['offsets'], info['counts']
+    if not offs or not cnts or len(offs) != len(cnts):
+        return 'strisce mancanti'
+    for i in range(1, len(offs)):
+        if offs[i] != offs[i - 1] + cnts[i - 1]:
+            return 'strisce non contigue'
+    size = info['nx'] * info['ny'] * info['nb'] * info['bits'] // 8
+    if sum(cnts) != size:
+        return 'dimensione dei dati inattesa'
+    return None
+
+
+def need(tool):
+    if shutil.which(tool) is None:
+        die('serve ' + tool + ' (pacchetto gdal) per convertire questo file')
+
+
+def convert(tif, info, out, args):
+    """Converte con GDAL in binario grezzo Float32 (o tipo originale), BSQ."""
+    reproject = (info['transform'] or info['geo'] is None or not info['geographic']
+                 or args.t_srs)
+    keep = (info['uniform'] and (info['sfmt'], info['bits']) in GRADS_TYPES
+            and not reproject)
+    ot = None if keep else 'Float32'
+    if reproject:
+        need('gdalwarp')
+        cmd = ['gdalwarp', '-overwrite', '-of', 'ENVI', '-co', 'INTERLEAVE=BSQ',
+               '-t_srs', args.t_srs or 'EPSG:4326', '-r', args.resampling,
+               '-dstnodata', str(info['nodata'] if info['nodata'] is not None
+                                 else UNDEF_DEFAULT)]
+        if args.res:
+            cmd += ['-tr', str(args.res), str(args.res)]
+    else:
+        need('gdal_translate')
+        cmd = ['gdal_translate', '-of', 'ENVI', '-co', 'INTERLEAVE=BSQ']
+    if ot:
+        cmd += ['-ot', ot]
+    cmd += ['-q', tif, out]
+    print('tif2ctl: ' + ' '.join(cmd))
+    r = subprocess.run(cmd)
+    if r.returncode:
+        die('conversione fallita')
+    # il risultato e' un ENVI (raw + .hdr): ne rileggo la georeferenziazione
+    # con gdalinfo, perche' gdalwarp cambia griglia
+    need('gdalinfo')
+    import json
+    js = json.loads(subprocess.run(['gdalinfo', '-json', out], capture_output=True,
+                                   text=True, check=True).stdout)
+    gt = js['geoTransform']
+    if gt[2] or gt[4]:
+        die('griglia ruotata anche dopo la conversione')
+    nx, ny = js['size']
+    btype = js['bands'][0]['type']
+    tmap = {'Byte': (1, 8), 'UInt16': (1, 16), 'Int16': (2, 16),
+            'Int32': (2, 32), 'Float32': (3, 32)}
+    sfmt, bits = tmap[btype]
+    nodata = js['bands'][0].get('noDataValue', info['nodata'])
+    # ENVI byte order: lo scrive gdal nell'.hdr (0 = little endian)
+    bo = '<' if sys.byteorder == 'little' else '>'
+    hdr = os.path.splitext(out)[0] + '.hdr'
+    if not os.path.exists(hdr):
+        hdr = out + '.hdr'
+    try:
+        with open(hdr) as h:
+            m = re.search(r'byte order\s*=\s*(\d)', h.read())
+            if m:
+                bo = '>' if m.group(1) == '1' else '<'
+    except OSError:
+        pass
+    return {'byteorder': bo, 'nx': nx, 'ny': ny, 'nb': len(js['bands']),
+            'bits': bits, 'sfmt': sfmt, 'nodata': nodata,
+            'geo': (gt[0], gt[1], gt[3], -gt[5]), 'header': 0}
+
+
+def fmtnum(x):
+    return ('%.10f' % x).rstrip('0').rstrip('.')
+
+
+def write_ctl(ctl, dset, d, args, title):
+    nx, ny, nb = d['nx'], d['ny'], d['nb']
+    west, dx, north, dy = d['geo']
+    # dy > 0: righe da nord a sud (il caso normale) -> yrev
+    lon0 = west + dx / 2.
+    if dy > 0:
+        lat0 = north - ny * dy + dy / 2.
+        yrev = True
+    else:
+        lat0 = north - dy / 2.
+        yrev = False
+    dy = abs(dy)
+    units = GRADS_TYPES[(d['sfmt'], d['bits'])][1]
+    undef = args.undef if args.undef is not None else (
+        d['nodata'] if d['nodata'] is not None else UNDEF_DEFAULT)
+    opts = []
+    if yrev:
+        opts.append('yrev')
+    opts.append('big_endian' if d['byteorder'] == '>' else 'little_endian')
+    var = args.var or re.sub(r'[^a-z0-9_]', '', os.path.splitext(
+        os.path.basename(dset))[0].lower()) or 'band'
+    if not var[0].isalpha():
+        var = 'v' + var
+    var = var[:15]
+    mode = args.bands if nb > 1 else 'vars'
+    nt = nb if mode == 'times' else 1
+    nz = nb if mode == 'levels' else 1
+    lines = ['DSET ^' + os.path.relpath(dset, os.path.dirname(os.path.abspath(ctl)) or '.'),
+             'TITLE ' + title,
+             'UNDEF ' + fmtnum(undef)]
+    if d['header']:
+        lines.append('FILEHEADER %d' % d['header'])
+    lines += ['OPTIONS ' + ' '.join(opts),
+              'XDEF %d LINEAR %s %s' % (nx, fmtnum(lon0), fmtnum(dx)),
+              'YDEF %d LINEAR %s %s' % (ny, fmtnum(lat0), fmtnum(dy)),
+              'ZDEF %d LINEAR 1 1' % nz,
+              'TDEF %d LINEAR %s %s' % (nt, args.tstart, args.tinc)]
+    if mode == 'vars' and nb > 1:
+        lines.append('VARS %d' % nb)
+        for b in range(nb):
+            lines.append('%-15s 0 %s banda %d' % ((var[:12] + str(b + 1)), units, b + 1))
+    else:
+        lines.append('VARS 1')
+        lines.append('%-15s %d %s %s' % (var, nz if nz > 1 else 0, units,
+                                         os.path.basename(dset)))
+    lines.append('ENDVARS')
+    with open(ctl, 'w') as f:
+        f.write('\n'.join(lines) + '\n')
+
+
+def main():
+    p = argparse.ArgumentParser(
+        description='Crea un descrittore GrADS (.ctl) per un GeoTIFF. Se il file '
+        'e\' leggibile cosi\' com\'e\' il ctl punta al .tif, altrimenti lo '
+        'converte con GDAL in un binario grezzo accanto al ctl.')
+    p.add_argument('tif', help='file GeoTIFF')
+    p.add_argument('ctl', nargs='?', help='descrittore da creare (def.: file.ctl)')
+    p.add_argument('-v', '--var', help='nome della variabile (def.: dal nome del file)')
+    p.add_argument('-u', '--undef', type=float,
+                   help='valore undef (def.: il nodata del tif, altrimenti %g)' % UNDEF_DEFAULT)
+    p.add_argument('-b', '--bands', choices=['vars', 'levels', 'times'], default='vars',
+                   help='con piu\' bande: una variabile per banda (def.), '
+                   'livelli Z o istanti T')
+    p.add_argument('-t', '--tstart', default='00z01jan2000',
+                   help='istante iniziale TDEF (def.: 00z01jan2000)')
+    p.add_argument('-i', '--tinc', default='1dy', help='passo TDEF (def.: 1dy)')
+    p.add_argument('-c', '--convert', action='store_true',
+                   help='converte sempre con GDAL, anche se il tif e\' leggibile')
+    p.add_argument('-s', '--t_srs',
+                   help='riproietta in questo sistema (def.: EPSG:4326 se il tif '
+                   'non e\' geografico)')
+    p.add_argument('-r', '--resampling', default='near',
+                   help='ricampionamento di gdalwarp (def.: near)')
+    p.add_argument('--res', type=float, help='passo della griglia riproiettata, in gradi')
+    p.add_argument('-o', '--outdir', help='cartella per ctl e binario (def.: quella del ctl)')
+    args = p.parse_args()
+
+    tif = args.tif
+    if not os.path.isfile(tif):
+        die(tif + ': file non trovato')
+    base = os.path.splitext(os.path.basename(tif))[0]
+    ctl = args.ctl or base + '.ctl'
+    if args.outdir:
+        ctl = os.path.join(args.outdir, os.path.basename(ctl))
+    if not ctl.endswith('.ctl'):
+        ctl += '.ctl'
+
+    info = tiff_info(tif)
+    reason = 'richiesta con -c' if args.convert else direct_reason(info)
+    if args.t_srs and not reason:
+        reason = 'riproiezione richiesta con -s'
+    if reason is None:
+        d = dict(info)
+        d['header'] = info['offsets'][0]
+        dset = tif
+        print('tif2ctl: %s letto direttamente (FILEHEADER %d)' % (tif, d['header']))
+    else:
+        dset = os.path.splitext(ctl)[0] + '.bin'
+        print('tif2ctl: %s da convertire: %s' % (tif, reason))
+        d = convert(tif, info, dset, args)
+    write_ctl(ctl, dset, d, args, base)
+    print('tif2ctl: scritto ' + ctl)
+
+
+if __name__ == '__main__':
+    main()
