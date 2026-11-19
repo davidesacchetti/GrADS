@@ -43,6 +43,8 @@ in the graphics window (class 4, X keysym: arrows 65361-65364). Without
 <li><b><a href="gradcomdscreen.html">screen dump / screen load</a></b>
 (2.2.5-8): saved screens written to PNG files and read back, also in another
 session; <code>screen show</code> scales the buffer to the window.
+Since 2.2.5-13 the saved screens are pixmaps on the X server, so
+<code>screen show</code> is fast also with a remote display (<code>ssh -X</code>).
 <li><b>Double buffering</b> (<a href="gradcomdsetdbuff.html">set dbuff</a>,
 <a href="gradcomdswap.html">swap</a>, 2.2.5-10, 2.2.5-11): no memory leak at
 each swap; when the window is resized the hidden buffer is recreated and the

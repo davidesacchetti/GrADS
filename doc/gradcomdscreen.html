@@ -62,6 +62,11 @@ or buffer loaded from a file), <code>screen show</code> scales the buffer to the
 window. After a <code>screen show</code>, when the window is resized the last
 buffer shown is drawn again, scaled to the new size, together with everything
 drawn after it.
+<p>With the Cairo display the saved screens are pixmaps on the X server
+(2.2.5-13): <code>screen save</code> and <code>screen show</code> are copies
+made by the server, so they are fast also with a remote display
+(<code>ssh -X</code>), where before every <code>screen show</code> sent the
+whole image through the network.
 <h3>Examples</h3>
 <pre>
 'd t'

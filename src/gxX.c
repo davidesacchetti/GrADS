@@ -2206,10 +2206,28 @@ cairo_surface_t *sfc2;
 /* Screen save and show operations. 'screen save N' copies the displayed
    window; 'screen show N' paints it on the current drawing surface
    (the background buffer in double buffer mode), scaled if the window
-   has been resized in the meantime. */
+   has been resized in the meantime.
+   The saved screens are X pixmaps on the X server (a surface similar to
+   the window), so save and show are copies made by the server: with a
+   remote display (ssh -X) no image goes through the network. Before they
+   were image surfaces in client memory, and every 'screen show' sent the
+   whole image to the server (about 28 ms for a window 700x1000 via
+   ssh -X, against about 1 ms locally). */
 
 static cairo_surface_t *scrsav[200];
+static gaint scrw[200], scrh[200];   /* size of the saved screens */
 static gaint scrinit = 0;
+
+/* new saved screen: pixmap on the X server, image surface as fallback */
+static cairo_surface_t *gxwscrnew (gaint w, gaint h) {
+cairo_surface_t *sfc;
+  sfc = cairo_surface_create_similar(surface, CAIRO_CONTENT_COLOR, w, h);
+  if (cairo_surface_status(sfc) != CAIRO_STATUS_SUCCESS) {
+    cairo_surface_destroy(sfc);
+    sfc = cairo_image_surface_create(CAIRO_FORMAT_RGB24, w, h);
+  }
+  return (sfc);
+}
 
 static gaint gxwscrok (int n) {
 gaint i;
@@ -2227,7 +2245,9 @@ cairo_t *c;
   gxCflush(1);                   /* complete pending drawing */
   cairo_surface_flush(surface);
   if (scrsav[frame]) cairo_surface_destroy(scrsav[frame]);
-  scrsav[frame] = cairo_image_surface_create(CAIRO_FORMAT_RGB24, width, height);
+  scrsav[frame] = gxwscrnew(width, height);
+  scrw[frame] = width;
+  scrh[frame] = height;
   if (cairo_surface_status(scrsav[frame]) != CAIRO_STATUS_SUCCESS) {
     printf ("Error allocating memory for screen save operation\n");
     cairo_surface_destroy(scrsav[frame]);
@@ -2235,9 +2255,11 @@ cairo_t *c;
     return;
   }
   c = cairo_create(scrsav[frame]);
+  cairo_set_operator(c, CAIRO_OPERATOR_SOURCE);
   cairo_set_source_surface(c, surface, 0, 0);
   cairo_paint(c);
   cairo_destroy(c);
+  cairo_surface_flush(scrsav[frame]);
 }
 
 void gxdssh (int cnt) {
@@ -2247,8 +2269,8 @@ gaint sw, sh;
   if (!gxwscrok(cnt) || scrsav[cnt]==NULL) return;
   gxCflush(1);
   sfc = gxwsfc(1);
-  sw = cairo_image_surface_get_width(scrsav[cnt]);
-  sh = cairo_image_surface_get_height(scrsav[cnt]);
+  sw = scrw[cnt];
+  sh = scrh[cnt];
   c = cairo_create(sfc);
   if (sw!=width || sh!=height) cairo_scale(c, (double)width/sw, (double)height/sh);
   cairo_set_source_surface(c, scrsav[cnt], 0, 0);
@@ -2272,13 +2294,23 @@ void gxdsfr (int frame) {
    window. Return 0 on success, 1 on error. */
 
 gaint gxdsdp (int frame, char *fname) {
+cairo_surface_t *img;
 cairo_status_t st;
+cairo_t *c;
   if (!gxwscrok(frame)) return (1);
   if (scrsav[frame]==NULL) {
     printf ("Screen Error: screen %d has not been saved\n",frame);
     return (1);
   }
-  st = cairo_surface_write_to_png(scrsav[frame], fname);
+  /* the saved screen is on the X server: read it into an image first */
+  img = cairo_image_surface_create(CAIRO_FORMAT_RGB24, scrw[frame], scrh[frame]);
+  c = cairo_create(img);
+  cairo_set_operator(c, CAIRO_OPERATOR_SOURCE);
+  cairo_set_source_surface(c, scrsav[frame], 0, 0);
+  cairo_paint(c);
+  cairo_destroy(c);
+  st = cairo_surface_write_to_png(img, fname);
+  cairo_surface_destroy(img);
   if (st != CAIRO_STATUS_SUCCESS) {
     printf ("Screen Error: unable to write %s: %s\n",fname,cairo_status_to_string(st));
     return (1);
@@ -2287,8 +2319,10 @@ cairo_status_t st;
 }
 
 gaint gxdsld (int frame, char *fname) {
-cairo_surface_t *sfc;
+cairo_surface_t *sfc, *pix;
 cairo_status_t st;
+cairo_t *c;
+gaint w, h;
   if (!gxwscrok(frame)) return (1);
   sfc = cairo_image_surface_create_from_png(fname);
   st = cairo_surface_status(sfc);
@@ -2297,8 +2331,21 @@ cairo_status_t st;
     cairo_surface_destroy(sfc);
     return (1);
   }
+  /* copied once to the X server, so that 'screen show' is fast */
+  w = cairo_image_surface_get_width(sfc);
+  h = cairo_image_surface_get_height(sfc);
+  pix = gxwscrnew(w, h);
+  c = cairo_create(pix);
+  cairo_set_operator(c, CAIRO_OPERATOR_SOURCE);
+  cairo_set_source_surface(c, sfc, 0, 0);
+  cairo_paint(c);
+  cairo_destroy(c);
+  cairo_surface_flush(pix);
+  cairo_surface_destroy(sfc);
   if (scrsav[frame]) cairo_surface_destroy(scrsav[frame]);
-  scrsav[frame] = sfc;
+  scrsav[frame] = pix;
+  scrw[frame] = w;
+  scrh[frame] = h;
   return (0);
 }
 
