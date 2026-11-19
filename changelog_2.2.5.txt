@@ -172,3 +172,21 @@ Aggiornamento del 18 novembre: release 2.2.5-12
 27. release 2.2.5-12
 
 - grads.spec, opengrads.spec: release 12 e voce nel changelog. ChangeLog e readme_dvd.txt aggiornati.
+
+Aggiornamento del 19 novembre: release 2.2.5-13
+
+28. 189ccdd: tif2ctl e documentazione
+
+- arpal/bin/tif2ctl (nuovo, installato in /opt/grads/bin da opengrads.spec): scrive il descrittore GrADS di un GeoTIFF. Se il file non e' compresso, e' in coordinate geografiche e ha le strisce contigue, il ctl punta direttamente al .tif: FILEHEADER e' l'offset della prima striscia, OPTIONS yrev (righe da nord a sud) e little_endian/big_endian secondo il file, XDEF/YDEF dai tag ModelPixelScale e ModelTiepoint (centri delle celle, PixelIsArea o PixelIsPoint), UNDEF dal tag GDAL_NODATA, tipo nel campo units (99 Float32, -1,40,1 Byte, -1,40,2 UInt16, -1,40,2,-1 Int16, -1,40,4 Int32). Negli altri casi (compressione, tile, bande interlacciate per pixel, tipi non supportati, proiezioni non geografiche) converte con gdal_translate o gdalwarp (EPSG:4326) in un .bin ENVI accanto al ctl. Opzioni: -v nome, -u undef, -b vars|levels|times per le bande, -t/-i per il TDEF, -c conversione forzata, -s/-r/--res per la riproiezione. I tag sono letti con la libreria standard di python: GDAL serve solo per convertire.
+- doc: nuove pagine arpal.html (riepilogo delle aggiunte ARPAL, linkato dalla pagina iniziale e dall'indice), gradfuncbilin.html (bilin, bicub), gradutiltif2ctl.html; aggiornate collect e coll2gr (dimensioni fisse, sezione 1-D, esempio di sezione obliqua), q config (riga Release), swap e set dbuff (ridimensionamento, schema screen show + swap), plugins.html e script.html (i widget ora funzionano anche con Cairo), indice alfabetico, elenco delle funzioni e delle utility.
+- Provato su 9 GeoTIFF generati con GDAL (Float32, LZW, a tile, Int16, Byte, big-endian, UTM, due bande interlacciate per pixel e per banda): in 4 punti, compreso un nodata, i valori letti da GrADS coincidono con gdallocationinfo; per UTM la riproiezione cambia griglia e set lon/lat puo' prendere la cella vicina. Bande come livelli e come istanti verificate. L'esempio di sezione obliqua di coll2gr.html provato sul GeoTIFF di prova.
+
+29. screen save/show su pixmap del server X (src/gxX.c, doc/gradcomdscreen.html)
+
+- Con il display Cairo gli schermi salvati erano immagini nella memoria del processo GrADS (cairo_image_surface): a ogni 'screen show' l'immagine intera veniva mandata al server X. In locale costa poco, ma con ssh -X ogni show di una finestra 700x1000 (2,8 MB) passa in rete: su mmm-dev 400 cicli screen show + swap richiedevano 11,4 s contro 0,49 s sul pc, e lo skew continuo (screen show a ogni fotogramma nella finestra skew e a ogni movimento del mouse in gridview9.gs) era lento.
+- Ora gli schermi salvati sono pixmap sul server X (cairo_surface_create_similar della finestra, con immagine in memoria come ripiego): save e show sono copie fatte dal server e in rete passa solo il comando. La dimensione dello schermo salvato e' tenuta a parte (scrw, scrh) perche' una superficie xlib non la restituisce. screen dump copia la pixmap in un'immagine prima di scrivere il PNG; screen load copia il PNG in una pixmap una volta sola.
+- Provato in locale: 400 cicli da 0,225 s a 0,051 s; screen save, dump, show in double buffer, load + show e show scalato su finestra di dimensioni diverse danno immagini identiche pixel per pixel alla 2.2.5-12. La prova con ssh -X va fatta su mmm-dev.
+
+30. release 2.2.5-13
+
+- grads.spec, opengrads.spec: release 13 e voce nel changelog. ChangeLog e readme_dvd.txt aggiornati.

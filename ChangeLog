@@ -98,6 +98,27 @@
       key presses are discarded, also those already queued, so existing
       scripts behave as before (Cairo and X11 displays).
 
+    Updates (2026-11-19, release 2.2.5-13):
+    * tif2ctl (ARPAL utility, installed in bindir): writes a descriptor
+      file for a GeoTIFF. An uncompressed, geographic GeoTIFF with
+      contiguous strips is read directly (FILEHEADER, OPTIONS yrev, byte
+      order, nodata as UNDEF; Float32, Byte, Int16, UInt16, Int32);
+      otherwise it is converted with GDAL (gdal_translate, or gdalwarp to
+      EPSG:4326 for projected grids) to a raw file next to the descriptor.
+      Multiple bands as variables, levels or times. TIFF tags are read
+      with the python standard library: GDAL is needed only to convert.
+    * Documentation: new pages arpal.html (summary of the ARPAL additions),
+      gradfuncbilin.html (bilin, bicub) and gradutiltif2ctl.html; updated
+      collect, coll2gr, q config, swap, set dbuff, widgets on Cairo
+      (plugins.html, script.html) and the indexes.
+    * Cairo display, screen save/show: the saved screens are pixmaps on the
+      X server instead of images in client memory, so 'screen show' is a
+      copy made by the server. With a remote display (ssh -X) no image
+      goes through the network: 400 'screen show' + 'swap' of a 700x1000
+      window took 11.4 s via ssh -X; locally 0.225 s became 0.051 s.
+      screen dump reads the pixmap back into an image; screen load copies
+      the PNG to a pixmap once.
+
 2025-11-19 Version 2.2.4
 
     Updates:

@@ -1,5 +1,5 @@
 RIEPILOGO MODIFICHE - GrADS 2.2.5 (fork ARPAL) e gradspy
-aggiornato al 18 novembre 2026
+aggiornato al 19 novembre 2026
 
 Repository
 - GrADS:   /opt/other/GrADS-2.2.5, branch 2.2.5
@@ -27,6 +27,8 @@ Dettagli completi: changelog_2.2.5.txt e ChangeLog nel repository GrADS.
   della finestra. (2.2.5-8)
 - 'set gxout grfill' 3-5 volte piu' veloce su griglie grandi, immagine
   identica. (2.2.5-8)
+- screen save/show su pixmap del server X: con ssh -X lo screen show non
+  manda piu' l'immagine in rete (skew continuo lento su mmm-dev). (2.2.5-13)
 - Double buffer (dbuff/swap): niente perdita di memoria a ogni swap
   (prima ~3,5 KB per swap); al ridimensionamento della finestra il buffer
   nascosto viene ricreato e l'immagine ridisegnata in scala (prima la parte
@@ -45,6 +47,12 @@ Dettagli completi: changelog_2.2.5.txt e ChangeLog nel repository GrADS.
   riga della tabella. (2.2.5-5)
 - Mappe hres/lres/mres_world installate in /opt/grads/share/grads. (2.2.5-2)
 - Compilazione con g2clib 1.6.0.
+- tif2ctl: descrittore GrADS per i GeoTIFF; il ctl punta al .tif se non e'
+  compresso ed e' geografico (FILEHEADER, yrev), altrimenti converte con
+  GDAL in un .bin. (2.2.5-13)
+- Documentazione (doc/): pagina arpal.html con tutte le aggiunte, pagine di
+  bilin/bicub e tif2ctl, collect/coll2gr, q config, swap/dbuff, widget su
+  Cairo. (2.2.5-13)
 
 
 3. GrADS 2.2.5 - GRADSPY (lato GrADS)
@@ -69,7 +77,7 @@ Dettagli completi: changelog_2.2.5.txt e ChangeLog nel repository GrADS.
   rpmbuild -ba opengrads.spec --define "__install_path /opt/grads" \
        --define "module_dir /usr/share/Modules/modulefiles"
   (opengrads.spec compila anche le estensioni ARPAL; grads.spec no)
-- Release in uso: 2.2.5-12.
+- Release in uso: 2.2.5-13.
 
 
 5. GRADSPY (repository separato /opt/other/gradspy)

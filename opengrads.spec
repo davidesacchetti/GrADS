@@ -18,7 +18,7 @@
 #
 Name:           grads
 Version:        2.2.5
-Release:        12%{?dist}
+Release:        13%{?dist}
 Summary:        Tool for easy acces, manipulation, and visualization of data
 
 Group:          Applications/Engineering
@@ -191,6 +191,13 @@ cat udpt | sed -e 's|GRADSPREFIX|%{_prefix}|g' > $RPM_BUILD_ROOT%{_datadir}/%{na
 %endif
 
 %changelog
+* Thu Nov 19 2026 ARPAL Sistemi CMI <sistemi.cmi@arpal.liguria.it> - 2.2.5-13
+- tif2ctl: GrADS descriptor files for GeoTIFF rasters (read directly when
+  uncompressed and geographic, otherwise converted with GDAL)
+- Documentation of the ARPAL additions (arpal.html, bilin/bicub, tif2ctl,
+  collect/coll2gr, q config, swap/dbuff, widgets on Cairo)
+- Cairo display: saved screens are pixmaps on the X server, 'screen show'
+  no longer sends the whole image through the network (ssh -X)
 * Wed Nov 18 2026 ARPAL Sistemi CMI <sistemi.cmi@arpal.liguria.it> - 2.2.5-12
 - 'q pos keys' (also with nowait/pointer): key presses in the graphics
   window are returned as class 4 with the X keysym and the modifiers

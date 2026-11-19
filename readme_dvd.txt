@@ -11,7 +11,7 @@
 # rpmbuild -ba opengrads.spec \
 #   --define "__install_path /opt/grads" \
 #   --define "module_dir /usr/share/Modules/modulefiles"
-# dnf install ~/rpmbuild/RPMS/x86_64/grads-2.2.5-12.*.x86_64.rpm
+# dnf install ~/rpmbuild/RPMS/x86_64/grads-2.2.5-13.*.x86_64.rpm
 
 % per provare modifiche non ancora nel push, dalla directory del progetto:
 % git archive --prefix=GrADS-2.2.5/ -o /root/rpmbuild/SOURCES/2.2.5.tar.gz HEAD
@@ -21,8 +21,8 @@
 
 # rpmbuild -ba GrADS-2.2.5/opengrads.spec --define "__install_path /opt/grads" --define "module_dir /usr/share/Modules/modulefiles"
 
-% la release (qui 12) e' quella di "Release:" in opengrads.spec; il suffisso e' .el8 su Rocky 8, .fc44 su Fedora 44
-# dnf install /root/rpmbuild/RPMS/x86_64/grads-2.2.5-12.*.x86_64.rpm
+% la release (qui 13) e' quella di "Release:" in opengrads.spec; il suffisso e' .el8 su Rocky 8, .fc44 su Fedora 44
+# dnf install /root/rpmbuild/RPMS/x86_64/grads-2.2.5-13.*.x86_64.rpm
 
 % gradspy sta in /opt/grads/lib/libgradspy.so (variabile GAGPY, impostata da "module load grads")
 % per mettere gradspy nel venv (ATTENZIONE: bisogna prima attivare il venv, altrimenti finisce in ~/.local):
