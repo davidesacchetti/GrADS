@@ -45,6 +45,8 @@ Dettagli completi: changelog_2.2.5.txt e ChangeLog nel repository GrADS.
 - 'q config' mostra la release completa (es. "Release 2.2.5-11.fc44"). (2.2.5-9)
 - 'q gxconfig' restituisce le righe anche in result: uno script sa se la
   sessione usa Cairo o X11. (2.2.5-14)
+- reset/reinit non azzerano piu' il plug-in di display (-d) e la geometria
+  (-g) della riga di comando. (2.2.5-15)
 - Caricatore delle estensioni (gaudx.c): correzioni su buffer, spazi e ultima
   riga della tabella. (2.2.5-5)
 - Mappe hres/lres/mres_world installate in /opt/grads/share/grads. (2.2.5-2)

@@ -202,3 +202,14 @@ Aggiornamento del 23 novembre: release 2.2.5-14
 32. release 2.2.5-14
 
 - grads.spec, opengrads.spec: release 14 e voce nel changelog. ChangeLog e readme_dvd.txt aggiornati.
+
+Aggiornamento del 23 novembre: release 2.2.5-15
+
+33. f82d344: reset e reinit non azzerano le opzioni della riga di comando (src/grads.c)
+
+- gainit() azzerava gcmn.gxdopt, gcmn.gxpopt e gcmn.xgeom (plug-in di display e di stampa, geometria -g), che main imposta dalla riga di comando solo dopo il primo gainit. 'reset' e 'reinit' chiamano gainit, quindi dopo un reset 'q gxconfig' mostrava GX Display "" (null): lo ha fatto vedere gridview9.gs su mmm-dev, che fa reinit prima di leggere il display per lo skew. Ora gainit non le tocca: sono globali, quindi vuote alla partenza.
+- Provato con -d Cairo, -d X11 e senza -d: dopo reset e reinit 'q gxconfig' da' lo stesso display di prima.
+
+34. release 2.2.5-15
+
+- grads.spec, opengrads.spec: release 15 e voce nel changelog. ChangeLog e readme_dvd.txt aggiornati.

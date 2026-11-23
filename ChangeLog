@@ -127,6 +127,12 @@
       whether the session uses the Cairo or the X11 display:
       subwrd(sublin(result,1),4) is "Cairo" or "X11".
 
+    Updates (2026-11-23, release 2.2.5-15):
+    * reset, reinit: the display and printing plug-in names (-d) and the
+      window geometry (-g) given on the command line are no longer
+      cleared by gainit(); after a reset 'q gxconfig' showed an empty
+      display name ("" and "(null)").
+
 2025-11-19 Version 2.2.4
 
     Updates:

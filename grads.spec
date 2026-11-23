@@ -19,7 +19,7 @@
 
 Name:           grads
 Version:        2.2.5
-Release:        14%{?dist}
+Release:        15%{?dist}
 Summary:        Tool for easy acces, manipulation, and visualization of data
 
 Group:          Applications/Engineering
@@ -155,6 +155,9 @@ cat udpt | sed -e 's|GRADSPREFIX|%{_prefix}|g' > $RPM_BUILD_ROOT%{_datadir}/%{na
 %endif
 
 %changelog
+* Mon Nov 23 2026 ARPAL Sistemi CMI <sistemi.cmi@arpal.liguria.it> - 2.2.5-15
+- reset/reinit no longer clear the display plug-in name and the window
+  geometry given on the command line ('q gxconfig' showed an empty name)
 * Mon Nov 23 2026 ARPAL Sistemi CMI <sistemi.cmi@arpal.liguria.it> - 2.2.5-14
 - 'q gxconfig': the lines are also returned in 'result', so a script can
   find out the display plug-in (Cairo or X11)
