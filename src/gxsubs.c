@@ -23,10 +23,12 @@
 #include <stdlib.h>
 #include <math.h>
 #include <dlfcn.h>
+#include <unistd.h>
 #include "gatypes.h"
 #include "gx.h"
 
 char *gaqupb (char *, gaint);
+void gaprnt (gaint, char *);
 void gree(void *mem, char *ch);
 
 /* The following variables are local to this file, and are used by
@@ -337,13 +339,43 @@ struct gxdsubs* getdsubs() {
   return &dsubs; 
 }
 
-/* get configuration information from display and printing plug-ins */
+/* run a plug-in configuration routine, which writes its versions to stdout
+   with printf, and copy that output into buf (stdout is redirected to a
+   temporary file meanwhile); on failure the routine writes to stdout as before */
+static void gxcfgcap (void (*cfg)(void), char *buf, gaint len) {
+  FILE *tmp;
+  gaint fd,n;
+  buf[0] = '\0';
+  fflush(stdout);
+  tmp = tmpfile();
+  if (tmp==NULL) { cfg(); return; }
+  fd = dup(fileno(stdout));
+  if (fd<0) { fclose(tmp); cfg(); return; }
+  dup2(fileno(tmp),fileno(stdout));
+  cfg();
+  fflush(stdout);
+  dup2(fd,fileno(stdout));
+  close(fd);
+  rewind(tmp);
+  n = fread(buf,1,len-1,tmp);
+  buf[n] = '\0';
+  while (n>0 && buf[n-1]=='\n') buf[--n] = '\0';
+  fclose(tmp);
+}
+
+/* get configuration information from display and printing plug-ins
+   (ARPAL 2.2.5-14: through gaprnt, so a script finds the lines in result) */
 void gxcfg (char *gxdopt, char *gxpopt) {
   const char *dname,*pname;
+  char ver[256],line[1024];
   dname=(const char *)gaqupb(gxdopt,3);
-  printf("  +  GX Display \"%s\"  %s  ",gxdopt,dname); dsubs.gxdcfg(); printf("\n");
+  gxcfgcap(dsubs.gxdcfg,ver,256);
+  snprintf(line,1023,"  +  GX Display \"%s\"  %s  %s\n",gxdopt,dname,ver);
+  gaprnt(2,line);
   pname=(const char *)gaqupb(gxpopt,4);
-  printf("  +  GX Print   \"%s\"  %s  ",gxpopt,pname); psubs.gxpcfg(); printf("\n");
+  gxcfgcap(psubs.gxpcfg,ver,256);
+  snprintf(line,1023,"  +  GX Print   \"%s\"  %s  %s\n",gxpopt,pname,ver);
+  gaprnt(2,line);
 }
 
 /* Terminate graphics output */
