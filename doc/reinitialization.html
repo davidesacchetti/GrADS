@@ -20,7 +20,9 @@ The <a href="gradcomdreinit.html"><code>reinit</code></a> command
 returns GrADS to its initial state.  <a
 href="gradcomdreinit.html"><code>reinit</code></a> closes all open
 files, releases all defined variables, and resets all graphics
-settings to their defaults.
+settings to their defaults; the graphics plug-ins and the window
+geometry chosen on the command line (<code>-d</code>, <code>-g</code>)
+are kept.
 
 <p>
 <b><i>Reset</i></b>
@@ -34,6 +36,12 @@ returns GrADS to its initial state with the following exceptions:
 <li>No defined variables are released
 <li>The <a href="gradcomdsetdisplay.html"><code>set display</code></a> settings
 are not modified
+<li>The graphics plug-ins and the window geometry chosen on the
+<a href="gradcomdgrads.html">command line</a> (<code>-d</code>,
+<code>-g</code>) are kept, as with <code>reinit</code>
+(GrADS 2.2.5-15, ARPAL: before, after a reset
+<a href="gradcomdquery.html"><code>q gxconfig</code></a> showed an empty
+display name)
 </ol>
 
 <p>

@@ -19,6 +19,12 @@ This command returns GrADS to its initial state with the following exceptions:
 <li>No defined variables are released
 <li>The <a href="gradcomdsetdisplay.html"><code>set display</code></a> settings
 are not modified
+<li>The graphics plug-ins and the window geometry chosen on the
+<a href="gradcomdgrads.html">command line</a> (<code>-d</code>,
+<code>-g</code>) are kept, as with <code>reinit</code>
+(GrADS 2.2.5-15, ARPAL: before, after a reset
+<a href="gradcomdquery.html"><code>q gxconfig</code></a> showed an empty
+display name)
 </ol>
 
 <p>
