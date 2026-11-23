@@ -581,9 +581,9 @@ gaint i;
   gcmn.dbprec = 6;
   gcmn.loopflg = 0;
   gcmn.aaflg = 1;
-  gcmn.xgeom[0] = '\0';
-  gcmn.gxdopt[0] = '\0';
-  gcmn.gxpopt[0] = '\0';
+  /* ARPAL 2.2.5-15: xgeom, gxdopt and gxpopt (command line options, set by
+     main after the first gainit) are not cleared here, so that 'reset' and
+     'reinit' do not lose them ('q gxconfig' showed an empty display name) */
 }
 
 void gasig(gaint i) {
