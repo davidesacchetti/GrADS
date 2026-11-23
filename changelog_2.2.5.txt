@@ -190,3 +190,15 @@ Aggiornamento del 19 novembre: release 2.2.5-13
 30. release 2.2.5-13
 
 - grads.spec, opengrads.spec: release 13 e voce nel changelog. ChangeLog e readme_dvd.txt aggiornati.
+
+Aggiornamento del 23 novembre: release 2.2.5-14
+
+31. 268c845: q gxconfig anche in result (src/gxsubs.c, doc/gradcomdquery.html, doc/arpal.html)
+
+- 'q gxconfig' scriveva le sue righe con printf: a terminale si vedevano, ma in uno script result restava vuoto. Ora gxcfg() le passa a gaprnt, come gli altri comandi q: da riga di comando l'output e' identico, in uno script le righe vanno in result (e non vengono stampate, come per q config). Le versioni (X11.0, cairo-x.y.z, gd-x.y.z) le scrivono i plug-in con printf in gxdcfg/gxpcfg: durante la chiamata stdout e' rediretto su un file temporaneo e il testo viene copiato nella riga, cosi' l'interfaccia dei plug-in non cambia.
+- Serve a gridview9.gs (repository mmm) per lanciare la finestra dello skew con lo stesso display (-d Cairo o -d X11) della sessione principale: subwrd(sublin(result,1),4) e' "Cairo" o "X11".
+- Provato con -d Cairo, -d X11 e senza -d, da riga di comando e da script.
+
+32. release 2.2.5-14
+
+- grads.spec, opengrads.spec: release 14 e voce nel changelog. ChangeLog e readme_dvd.txt aggiornati.

@@ -19,7 +19,7 @@
 
 Name:           grads
 Version:        2.2.5
-Release:        13%{?dist}
+Release:        14%{?dist}
 Summary:        Tool for easy acces, manipulation, and visualization of data
 
 Group:          Applications/Engineering
@@ -155,6 +155,9 @@ cat udpt | sed -e 's|GRADSPREFIX|%{_prefix}|g' > $RPM_BUILD_ROOT%{_datadir}/%{na
 %endif
 
 %changelog
+* Mon Nov 23 2026 ARPAL Sistemi CMI <sistemi.cmi@arpal.liguria.it> - 2.2.5-14
+- 'q gxconfig': the lines are also returned in 'result', so a script can
+  find out the display plug-in (Cairo or X11)
 * Thu Nov 19 2026 ARPAL Sistemi CMI <sistemi.cmi@arpal.liguria.it> - 2.2.5-13
 - tif2ctl: GrADS descriptor files for GeoTIFF rasters (read directly when
   uncompressed and geographic, otherwise converted with GDAL)

@@ -119,6 +119,14 @@
       screen dump reads the pixmap back into an image; screen load copies
       the PNG to a pixmap once.
 
+    Updates (2026-11-23, release 2.2.5-14):
+    * q gxconfig: the lines are printed with gaprnt, so a script gets them
+      in 'result' (before they were written with printf and 'result' was
+      empty). The versions written by the plug-ins are captured from
+      stdout, so the plug-in interface is unchanged. A script can find out
+      whether the session uses the Cairo or the X11 display:
+      subwrd(sublin(result,1),4) is "Cairo" or "X11".
+
 2025-11-19 Version 2.2.4
 
     Updates:
