@@ -1,0 +1,22 @@
+<!--Copyright (C) 1988-2005 by the Institute of Global Environment and Society (IGES). See file COPYRIGHT for more information.-->
+
+<h2>set wtitle</h2>
+<code>set wtitle <i>title</i></code><p>
+Sets the title of the graphics window (and its icon name) to <code><i>title</i></code>,
+the rest of the command line with its case. (ARPAL, GrADS 2.2.5-17)
+<h3>Usage Notes</h3>
+<ol>
+<li>The default title is &quot;GrADS <i>version</i>&quot;. To have the title already
+when the window opens use the command line option
+<a href="gradcomdgrads.html"><code>-T <i>title</i></code></a>; <code>set wtitle</code>
+changes it afterwards, for example from a script.
+<li>Works with the Cairo and X11 display plug-ins; it is ignored in batch mode and
+by display plug-ins that do not provide it (no error).
+<li>No external tool (xprop, xdotool) is needed.
+</ol>
+<h3>Examples</h3>
+<pre>
+grads -l -T "ecita_2026111806 SKEW" -c "run essl_skew.gs ..."
+
+'set wtitle ecita_2026111806 E-W'
+</pre>

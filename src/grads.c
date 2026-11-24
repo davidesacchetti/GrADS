@@ -34,6 +34,7 @@
 #include <math.h>
 #include <signal.h>
 #include "grads.h"
+void gxwtitle (char *);
 
 #if USEGUI == 1
 #include "gagui.h"
@@ -72,7 +73,7 @@ int main (int argc, char *argv[])  {
   
   char cmd[1024];
   gaint rc,i,j,land,port,cmdflg,hstflg,killflg,ratioflg;
-  gaint metabuff,size=0,g2size=0,geomflg=0;
+  gaint metabuff,size=0,g2size=0,geomflg=0,titflg=0;
   gaint gxd=0,gxp=0;
   char gxdopt[16],gxpopt[16],xgeom[100]; 
   gaint txtcs=-2;
@@ -159,6 +160,9 @@ int main (int argc, char *argv[])  {
       } else if (ratioflg) {                      /* next arg is aspect ratio */
         aspratio = atof(argv[i]);
         ratioflg = 0;
+      } else if (titflg) {                        /* next arg is the window title (ARPAL) */
+	gxwtitle(argv[i]);
+	titflg=0;
       } else if (geomflg) {                       /* next arg is the geometry string */
 	snprintf(xgeom,100,"%s",argv[i]);
 	geomflg=0;
@@ -179,6 +183,7 @@ int main (int argc, char *argv[])  {
 	  else if (*(argv[i]+j)=='l') land = 1;        /* landscape mode */
 	  else if (*(argv[i]+j)=='m') metabuff = 1;    /* metafile buffer size to follow */
 	  else if (*(argv[i]+j)=='p') port = 1;        /* portrait mode */
+	  else if (*(argv[i]+j)=='T') titflg = 1;      /* window title to follow (ARPAL) */
 	  else if (*(argv[i]+j)=='u') {                /* unbuffer output: needed for IPC via pipes */
 	    hstflg = 0;                                /* no need for readline in IPC mode */
 	    ipcflg = 1;
@@ -199,6 +204,7 @@ int main (int argc, char *argv[])  {
   if (ratioflg==1) printf ("Note: -a option was specified, but no aspect ratio was provided\n");
   if (cmdflg==1)   printf ("Note: -c option was specified, but no command was provided\n");
   if (geomflg==1)  printf ("Note: -g option was specified, but no geometry specification was provided\n");
+  if (titflg==1)   printf ("Note: -T option was specified, but no window title was provided\n");
   if (metabuff==1) printf ("Note: -m option was specified, but no metafile buffer size was provided\n");
   
   if (ipcflg) printf("\n<IPC>" );  /* delimit splash screen */
@@ -628,6 +634,7 @@ void command_line_help (void) {
   printf("    -h name     Name of the graphics hardcopy printing package, given in 'gxprint' entry of UDPT\n");
   printf("    -l          Starts in landscape mode with real page size 11 x 8.5 \n");
   printf("    -p          Starts in portrait mode with real page size 8.5 x 11 \n");
+  printf("    -T title    Sets the title of the graphics window (default \"GrADS <version>\") \n");
   printf("    -m NNN      Sets metafile buffer size to NNN (must be an integer) \n");
   printf("    -u          Unbuffers stdout/stderr, disables command line editing \n");
   printf("    -x          Causes GrADS to automatically quit after executing supplied command (used with -c) \n");

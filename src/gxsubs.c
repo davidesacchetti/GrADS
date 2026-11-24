@@ -69,6 +69,20 @@ static struct gxdsubs dsubs;                 /* Holds function pointers to displ
 /* Initialize graphics output  */
 /* If batch flag is 1, batch mode only (no graphics output) */
 
+/* ARPAL 2.2.5-17: window title (grads -T, 'set wtitle'). Before the
+   graphics start the title is kept and given to the display plug-in just
+   before the window is created; afterwards the open window is renamed.
+   Ignored in batch mode and by display plug-ins without gxdtitle. */
+
+static char wtpend[256] = "";
+static gaint gxstarted = 0;
+
+void gxwtitle (char *t) {
+  if (t==NULL) return;
+  snprintf(wtpend,256,"%s",t);
+  if (gxstarted && intflg && dsubs.gxdtitle) dsubs.gxdtitle(wtpend);
+}
+
 gaint gxstrt (gadouble xmx, gadouble ymx, gaint batch, gaint hbufsz, char *gxdopt, char *gxpopt, char *xgeom) {
   gaint rc;
 
@@ -83,8 +97,10 @@ gaint gxstrt (gadouble xmx, gadouble ymx, gaint batch, gaint hbufsz, char *gxdop
   }
   if (intflg) {
     if (xgeom[0]!='\0') dsubs.gxdgeo(xgeom);  /* tell display software about geometry override */
+    if (wtpend[0]!='\0' && dsubs.gxdtitle) dsubs.gxdtitle(wtpend);  /* window title (-T) */
     dsubs.gxdbgn(xmx, ymx);                   /* Initialize graphics output */
     dsubs.gxdwid(3);                          /* Initial line width */
+    gxstarted = 1;
   } else {				      		       		    
     dsubs.gxdbat();                           /* Tell display hardware layer we're in batch mode */
     psubs.gxpinit(xmx, ymx);                  /* printing layer initializes batch mode surface */
@@ -326,6 +342,8 @@ gaint gxload(char *gxdopt, char *gxpopt) {
   if (dlerror()!=NULL) dsubs.gxdsdp = NULL;
   dsubs.gxdsld   = dlsym(dhandle,"gxdsld"); 
   if (dlerror()!=NULL) dsubs.gxdsld = NULL;
+  dsubs.gxdtitle = dlsym(dhandle,"gxdtitle"); 
+  if (dlerror()!=NULL) dsubs.gxdtitle = NULL;
   return(0);
 }
 

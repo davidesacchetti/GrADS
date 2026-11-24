@@ -5119,7 +5119,7 @@ char *ch=NULL,*ch2=NULL,*strng,*pat,*cmd1;
 char ename1[16],ename2[16];
 size_t sz;
 char *tileimg=NULL;
-static char *kwds[130] = {"X","Y","Z","T","LON","LAT","LEV","TIME",
+static char *kwds[131] = {"X","Y","Z","T","LON","LAT","LEV","TIME",
 			  "CINT","CSTYLE","CCOLOR","LOOPDIM",
 			  "LOOPING","LOOPINCR","DFILE","VRANGE",
 			  "CSMOOTH","GRID","CMARK","XAXIS","YAXIS",
@@ -5144,7 +5144,7 @@ static char *kwds[130] = {"X","Y","Z","T","LON","LAT","LEV","TIME",
 			  "E","ENS","SDFWRITE","SDFATTR","GEOTIFF","KML",
 			  "UNDEF","CHUNKSIZE","CACHESF","SHPOPTS",
 			  "SHP","SHPATTR","LOG1D","STRMOPTS","TILE",
-			  "HERSHEY","LWID","ANTIALIAS","BARBOPTS"};
+			  "HERSHEY","LWID","ANTIALIAS","BARBOPTS","WTITLE"};
 
   strng = NULL;
   kwrd=-1;
@@ -5532,6 +5532,24 @@ static char *kwds[130] = {"X","Y","Z","T","LON","LAT","LEV","TIME",
     if (getdbl(cmd,&(pcm->ylint)) == NULL ) goto err;
     snprintf(pout,1255,"ylint = %g \n",pcm->ylint);
     gaprnt (2,pout);
+  }
+  else if (cmpwrd("wtitle",cmd)) {
+    /* ARPAL 2.2.5-17: title of the graphics window, rest of the line with
+       its case (the mixed case version com still starts with 'set') */
+    kwrd = 130;
+    com = nxtwrd(com);
+    if ((com = nxtwrd (com)) == NULL) goto err;
+    i = 0;
+    while (com[i]!='\0' && com[i]!='\n' && i<255) i++;
+    while (i>0 && (com[i-1]==' ' || com[i-1]=='\t')) i--;
+    if (i==0) goto err;
+    strng = (char *)galloc(i+1,"wtitle");
+    if (strng==NULL) goto err;
+    memcpy(strng,com,i);
+    strng[i] = '\0';
+    gxwtitle(strng);
+    gree(strng,"wtitle");
+    strng = NULL;
   }
   else if (cmpwrd("xsize",cmd)) {
     kwrd = 35;

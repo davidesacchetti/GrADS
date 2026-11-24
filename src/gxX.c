@@ -1658,6 +1658,24 @@ void gxdbat (void) {
   batch = 1;
 }
 
+/* ARPAL 2.2.5-17: window title (grads -T, 'set wtitle'). Optional plug-in
+   entry: called before gxdbgn it only stores the title, afterwards it also
+   renames the open window (WM_NAME and icon name). */
+
+static char wtitle[256];
+
+void gxdtitle (char *t) {
+  if (t==NULL) return;
+  snprintf(wtitle,256,"%s",t);
+  window_name = wtitle;
+  icon_name = wtitle;
+  if (display && win) {
+    XStoreName(display, win, wtitle);
+    XSetIconName(display, win, wtitle);
+    XFlush(display);
+  }
+}
+
 /* Routine to specify user-defined geometry string for X display window. 
    Must be called before gxdbgn to have any affect */
 

@@ -240,6 +240,7 @@ struct gxdsubs {
   /* optional: NULL if the display plug-in does not provide them */
   gaint (*gxdsdp) (int,char*);   /* screen dump: write a saved screen to a PNG file */
   gaint (*gxdsld) (int,char*);   /* screen load: read a saved screen from a PNG file */
+  void  (*gxdtitle) (char*);     /* window title (ARPAL 2.2.5-17) */
 };
 
 /* Function prototypes for GX library routines  */
@@ -340,6 +341,7 @@ void gxmaskclear (void);
 */
 
 gaint gxstrt (gadouble, gadouble, gaint, gaint, char *, char *, char *);
+void gxwtitle (char *);
 void gxend (void);
 void gxfrme (gaint);
 void gxcolr (gaint);
