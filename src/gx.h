@@ -241,6 +241,7 @@ struct gxdsubs {
   gaint (*gxdsdp) (int,char*);   /* screen dump: write a saved screen to a PNG file */
   gaint (*gxdsld) (int,char*);   /* screen load: read a saved screen from a PNG file */
   void  (*gxdtitle) (char*);     /* window title (ARPAL 2.2.5-17) */
+  void  (*gxdcurs) (gaint);      /* mouse pointer, 0 default 1 crosshair (ARPAL 2.2.5-20) */
 };
 
 /* Function prototypes for GX library routines  */

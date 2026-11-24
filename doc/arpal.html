@@ -65,6 +65,13 @@ the saved screen to the window (XRender, done by the X server) and
 <a href="gradcomdsetwtitle.html"><code>set wtitle <i>title</i></code></a>, with
 the Cairo and X11 displays, without external tools (xprop, xdotool). The display
 plug-ins have the new optional entry <code>gxdtitle</code>.
+<li><b>Mouse pointer</b> (2.2.5-20): while
+<a href="gradcomdqpos.html">q pos</a> reads the mouse (also with
+<code>nowait</code> and <code>pointer</code>) the pointer on the window is the
+crosshair of the desktop cursor theme (libXcursor, loaded at run time; the core
+X crosshair without it); back to the normal pointer after the awaited click and
+at the command prompt. Cairo and X11 displays, new optional plug-in entry
+<code>gxdcurs</code>.
 </ul>
 
 <h3>Functions and commands</h3>

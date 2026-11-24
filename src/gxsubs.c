@@ -83,6 +83,15 @@ void gxwtitle (char *t) {
   if (gxstarted && intflg && dsubs.gxdtitle) dsubs.gxdtitle(wtpend);
 }
 
+/* ARPAL 2.2.5-20: mouse pointer of the window (0 default, 1 crosshair);
+   the display plug-in sets the crosshair by itself while reading the mouse,
+   the main loop puts the default pointer back at the interactive prompt.
+   Ignored in batch mode and by display plug-ins without gxdcurs. */
+
+void gxcurs (gaint on) {
+  if (gxstarted && intflg && dsubs.gxdcurs) dsubs.gxdcurs(on);
+}
+
 gaint gxstrt (gadouble xmx, gadouble ymx, gaint batch, gaint hbufsz, char *gxdopt, char *gxpopt, char *xgeom) {
   gaint rc;
 
@@ -344,6 +353,8 @@ gaint gxload(char *gxdopt, char *gxpopt) {
   if (dlerror()!=NULL) dsubs.gxdsld = NULL;
   dsubs.gxdtitle = dlsym(dhandle,"gxdtitle"); 
   if (dlerror()!=NULL) dsubs.gxdtitle = NULL;
+  dsubs.gxdcurs = dlsym(dhandle,"gxdcurs"); 
+  if (dlerror()!=NULL) dsubs.gxdcurs = NULL;
   return(0);
 }
 

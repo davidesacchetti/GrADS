@@ -16,6 +16,8 @@
 #include <X11/Xos.h>
 #include <X11/Xatom.h>
 #include <X11/keysym.h>
+#include <X11/cursorfont.h>
+#include <dlfcn.h>
 #include <sys/time.h>
 #include <sys/select.h>
 
@@ -1676,6 +1678,46 @@ void gxdtitle (char *t) {
   }
 }
 
+/* ARPAL 2.2.5-20: mouse pointer. Crosshair while GrADS reads the mouse
+   (q pos / q bpos, also with nowait and pointer); back to the default
+   pointer when a waited click has been read, or at the next interactive
+   prompt (gxdcurs(0), optional plug-in entry). The crosshair comes from
+   the desktop cursor theme through libXcursor, loaded at run time (no
+   build dependency); without it the core X crosshair is used. */
+
+static Cursor curcross = None;
+static gaint curon = 0;
+
+static Cursor gxwcross (void) {
+  typedef Cursor (*xcload_t) (Display *, const char *);
+  xcload_t xcload;
+  Cursor c;
+  void *h;
+  h = dlopen("libXcursor.so.1", RTLD_LAZY);
+  if (h) {
+    xcload = (xcload_t)dlsym(h, "XcursorLibraryLoadCursor");
+    if (xcload) {
+      c = xcload(display, "crosshair");
+      if (c==None) c = xcload(display, "cross");
+      if (c!=None) return (c);
+    }
+    dlclose(h);
+  }
+  return (XCreateFontCursor(display, XC_crosshair));
+}
+
+void gxdcurs (gaint on) {
+  if (batch || display==NULL || !win) return;
+  on = on ? 1 : 0;
+  if (on==curon) return;
+  if (on) {
+    if (curcross==None) curcross = gxwcross();
+    XDefineCursor(display, win, curcross);
+  } else XUndefineCursor(display, win);
+  curon = on;
+  XFlush(display);
+}
+
 /* Routine to specify user-defined geometry string for X display window. 
    Must be called before gxdbgn to have any affect */
 
@@ -2033,6 +2075,7 @@ gaint i,keys;
     keyflg = 1;
     flag -= 4;
   }
+  gxdcurs(1);                  /* crosshair while reading the mouse */
   if (flag==3) {
     /* Current pointer position, no button press needed.
        mbtn is the button being held down (0 if none), type is 0.
@@ -2082,6 +2125,7 @@ gaint i,keys;
     if (!keys) gxdkdrop();
     if (evbase!=NULL || flag==0) break;
   }
+  if (flag==1) gxdcurs(0);     /* click read: default pointer again */
   if (evbase==NULL) {
     *xpos = -999.9;
     *ypos = -999.9;

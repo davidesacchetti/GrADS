@@ -35,6 +35,7 @@
 #include <signal.h>
 #include "grads.h"
 void gxwtitle (char *);
+void gxcurs (gaint);
 
 #if USEGUI == 1
 #include "gagui.h"
@@ -363,6 +364,7 @@ int main (int argc, char *argv[])  {
   while (rc>-1) {
     
     if (killflg) return(99);
+    gxcurs(0);       /* default mouse pointer at the prompt (ARPAL 2.2.5-20) */
     
 #if READLINE == 1
 #if defined(MM_NEW_PROMPT) 
