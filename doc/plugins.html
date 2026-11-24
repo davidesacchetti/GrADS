@@ -33,6 +33,14 @@ The User Defined Plug-in Table (<a href="udpt.html">UDPT</a>) is a simple stand-
 The display and printing plug-ins are independent, so users can mix and match new and old depending on what is needed. The old pre-Cairo code for creating vector graphic output for printing (.ps and .eps) is no longer supported at all -- those output formats are now only supported through the Cairo interface. 
 <p><strong>Graphics Display</strong><br>
 For the interactive X-window display, users can choose between the newer Cairo interface or the tradtional X11 code that supports  widgets (buttons, drop menus, and rubber banding). The Cairo  plug-in creates a more visually pleasing graphic because it support fonts, anti-aliasing, transparent colors, and pattern filling. The  downsides of using Cairo for the display are: (1) it doesn't support the widgets (<span class="red">version 2.2.5 ARPAL</span>: the Cairo display supports widgets, see <a href="arpal.html">ARPAL additions</a>),  (2) it slower than the old X11 code, and (3) a few users have  reported that it is buggy (fragmented and only partially rendered) for  X11 servers on some  desktop unix platforms. </p>
+<p><span class="red">Version 2.2.5 ARPAL</span>: the two displays behave the same also for
+<a href="gradcomdscreen.html">screen save/show</a> after the window is resized (the saved
+screen is scaled to the window, 2.2.5-18) and for the window title
+(<a href="gradcomdgrads.html"><code>-T</code></a>,
+<a href="gradcomdsetwtitle.html"><code>set wtitle</code></a>, 2.2.5-17): Cairo gives the
+nicer graphics, X11 is faster, and the choice is made with <code>-d Cairo</code> or
+<code>-d X11</code>. A display plug-in may provide the optional entry
+<code>gxdtitle</code> (window title); without it the title is ignored.</p>
 <p><strong>Graphics Printing</strong><br>
 For printing -- creating graphical output in image or vector formats -- users can choose between  Cairo or the GD library.  The  GD interface is very fast and creates relatively small image files, but the image quality is low. The GrADS GD plug-in does not support fonts, anti-aliasing, transparent colors, or pattern filling.  If image quality is more important than the time it takes to create the files or the size of the output files, then the Cairo interface is recommended. The Cairo plug-in supports only .png for image output; the GD plug-in  supports .png as well as .gif and .jpg image formats. If you want a vector graphic  (.ps, .eps, .pdf, or .svg) then your only option is the Cairo plug-in.</p>
 <p><strong>GrADS without Graphics<br>
