@@ -5145,6 +5145,30 @@ size_t sz;
   return (0);
 }
 
+/* ARPAL 2.2.5-16: the stations of coll2gr are equally spaced along the X
+   range of the dimension environment, so the X axis of the result is linear.
+   Describe it as linear (like a LINEAR xdef: grvals = incr, start-incr;
+   abvals = 1/incr, -(start-incr)/incr), so that the result can be combined
+   with grids of the files (e.g. lev, or a variable of the file) instead of
+   failing in gagchk with "one axis is linear and the other is non-linear".
+   iv must have room for 6 values. Returns 1 if done (at least 2 stations). */
+
+static gaint c2glin (struct gagrid *pgr, gadouble *iv, gaint scnt, gadouble x1, gadouble xdiff) {
+  if (scnt<2 || xdiff<=0.0) return (0);
+  *(iv)   = xdiff;
+  *(iv+1) = x1 - xdiff;
+  *(iv+2) = -999.9;
+  *(iv+3) = 1.0/xdiff;
+  *(iv+4) = -1.0*((x1-xdiff)/xdiff);
+  *(iv+5) = -999.9;
+  pgr->ilinr = 1;
+  pgr->ivals = iv;
+  pgr->iavals = iv+3;
+  pgr->igrab = liconv;
+  pgr->iabgr = liconv;
+  return (1);
+}
+
 /* coll2gr with only X varying: one value per collected station, at the
    level of the dimension environment (linear interpolation between the
    station levels). A station with a single report (e.g. a variable not
@@ -5162,7 +5186,7 @@ static gaint ffclgr1 (struct gaclct *clct, gaint scnt, struct gastat *pst) {
   lev = pst->dmin[2];
   gr  = (gadouble *)galloc(sizeof(gadouble)*scnt,"col2gr1gr");
   gru = (char *)galloc(sizeof(char)*scnt,"col2gr1gru");
-  iv  = (gadouble *)galloc(sizeof(gadouble)*(scnt+2),"col2gr1iv");
+  iv  = (gadouble *)galloc(sizeof(gadouble)*(scnt+2<6?6:scnt+2),"col2gr1iv");
   pgr = (struct gagrid *)galloc(sizeof(struct gagrid),"col2gr1pgr");
   if (gr==NULL || gru==NULL || iv==NULL || pgr==NULL) {
     gaprnt (0,"Error from COLL2GR: failed to allocate memory for 1-D section\n");
@@ -5229,6 +5253,7 @@ static gaint ffclgr1 (struct gaclct *clct, gaint scnt, struct gastat *pst) {
   pgr->jgrab = NULL;
   pgr->iabgr = lev2gr;
   pgr->jabgr = NULL;
+  c2glin(pgr, iv, scnt, pst->dmin[0], xdiff);
   pgr->alocf = 1;
 
   pst->type = 1;
@@ -5485,7 +5510,7 @@ gaint ffclgr (struct gafunc *pfc, struct gastat *pst) {
   pgr->exprsn = NULL;
   pgr->ilinr = 0;
   pgr->jlinr = 0;
-  sz = sizeof(gadouble)*(scnt+2);
+  sz = sizeof(gadouble)*(scnt+2<6?6:scnt+2);
   iv = (gadouble *)galloc(sz,"col2griv");
   if (iv==NULL) {
     gaprnt (0,"Error from COLL2GR: failled to allocate memory for scnt \n");
@@ -5513,6 +5538,7 @@ gaint ffclgr (struct gafunc *pfc, struct gastat *pst) {
   pgr->jgrab = gr2lev;
   pgr->iabgr = lev2gr;
   pgr->jabgr = lev2gr;
+  c2glin(pgr, iv, scnt, pst->dmin[0], xdiff);
   pgr->alocf = 1; 
 
   pst->type = 1;

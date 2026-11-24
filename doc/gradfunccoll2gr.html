@@ -67,6 +67,15 @@ the <code>define</code> of X-Z sections, because <code>define</code>
 evaluates the expression one level at a time.
 
 <p>
+<li>Version 2.2.5-16 (ARPAL): the X axis of the result is linear (the
+stations are equally spaced along the X range of the dimension
+environment), so the result can be combined with grids of the open files
+on the same X range, for example <code>coll2gr(1,-u)-lev</code> or an
+expression of a section defined with the same name as a variable of the
+file. Before, these expressions failed with "one axis is linear and the
+other is non-linear".
+
+<p>
 <li>The <code>"-u"</code> option will only work for data in pressure
 vertical coordinates. If your vertical coordinate is height,
 <code><i>num</i></code> should be the actual number of vertical levels
