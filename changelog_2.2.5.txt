@@ -245,3 +245,19 @@ Aggiornamento del 24 novembre: release 2.2.5-17
 40. release 2.2.5-17
 
 - grads.spec, opengrads.spec: release 17 e voce nel changelog. ChangeLog e readme_dvd.txt aggiornati.
+
+Aggiornamento del 24 novembre: release 2.2.5-18
+
+41. 804d851: screen save/show sul display X11 con la finestra ridimensionata (src/gxX11.c, src/Makefile.am, src/Makefile.in, doc/gradcomdscreen.html, doc/arpal.html)
+
+- Con -d X11, ridimensionando la finestra delle sezioni continue di gridview9.gs se ne perdeva una parte: 'screen show' copiava lo schermo salvato (es. il 98 con logo e piede "An: ... Model") alla dimensione che aveva al 'screen save', coprendo l'angolo in alto a sinistra della finestra vecchia; inoltre la pixmap di uno schermo veniva creata una volta sola, quindi uno schermo risalvato dopo un allargamento restava tagliato.
+- Ora gxdssv ricrea la pixmap se la finestra ha cambiato dimensione e tiene la dimensione di ogni schermo (scrw, scrh); gxdssh, se le dimensioni sono diverse, scala lo schermo con XRender (trasformazione e filtro bilineare sul server X, come cairo_scale nel display Cairo): con ssh -X passa solo la richiesta. Senza l'estensione XRender copia come prima. Il plug-in X11 e' linkato con -lXrender (libXrender e' gia' tra i Requires della spec).
+- Provato con una finestra vera ridimensionata con xdotool e catturata con import: allargando e rimpicciolendo la sezione resta intera, anche dopo il punto successivo. Con Cairo il ridimensionamento funzionava gia'.
+
+42. 6145612: doc/plugins.html
+
+- Nota sulla scelta tra Cairo (piu' bello) e X11 (piu' veloce): i due display si comportano allo stesso modo per screen show dopo un ridimensionamento e per il titolo della finestra (-T, set wtitle); gxdtitle e' un simbolo opzionale dei plug-in.
+
+43. release 2.2.5-18
+
+- grads.spec, opengrads.spec: release 18 e voce nel changelog. ChangeLog e readme_dvd.txt aggiornati.

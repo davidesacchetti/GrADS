@@ -19,7 +19,7 @@
 
 Name:           grads
 Version:        2.2.5
-Release:        17%{?dist}
+Release:        18%{?dist}
 Summary:        Tool for easy acces, manipulation, and visualization of data
 
 Group:          Applications/Engineering
@@ -155,6 +155,9 @@ cat udpt | sed -e 's|GRADSPREFIX|%{_prefix}|g' > $RPM_BUILD_ROOT%{_datadir}/%{na
 %endif
 
 %changelog
+* Tue Nov 24 2026 ARPAL Sistemi CMI <sistemi.cmi@arpal.liguria.it> - 2.2.5-18
+- X11 display: 'screen show' scales the saved screen to a resized window
+  (XRender) and 'screen save' after a resize saves the whole window
 * Tue Nov 24 2026 ARPAL Sistemi CMI <sistemi.cmi@arpal.liguria.it> - 2.2.5-17
 - window title: grads -T title and 'set wtitle title' (Cairo and X11)
 * Tue Nov 24 2026 ARPAL Sistemi CMI <sistemi.cmi@arpal.liguria.it> - 2.2.5-16

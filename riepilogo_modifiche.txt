@@ -45,6 +45,9 @@ Dettagli completi: changelog_2.2.5.txt e ChangeLog nel repository GrADS.
 - set rband line su X11: segmento dal click al puntatore come su Cairo. (2.2.5-16)
 - Titolo della finestra: grads -T "titolo" e 'set wtitle titolo', senza
   xprop/xdotool. (2.2.5-17)
+- Display X11: screen show scala lo schermo salvato alla finestra
+  ridimensionata (XRender) e screen save dopo un ridimensionamento salva
+  tutta la finestra, come con Cairo. (2.2.5-18)
 - Estensioni ARPAL (libdvd.gex): bilin(expr,lon,lat) e bicub(expr,lon,lat),
   interpolazione bilineare/bicubica in un punto, usate per i profili
   verticali degli skew. (2.2.5-7)

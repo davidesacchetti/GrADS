@@ -153,6 +153,14 @@
       entry gxdtitle; plug-ins without it keep working, the title is
       ignored. Ignored in batch mode.
 
+    Fixes (2026-11-24, release 2.2.5-18):
+    * X11 display: 'screen show' scales the saved screen to the window when
+      the window has been resized after 'screen save' (as the Cairo display
+      does); the scaling is done by the X server with XRender, so it is
+      fast also with a remote display. 'screen save' after a resize saves
+      the whole window (the pixmap kept the size of the first save). The
+      X11 plug-in is linked with libXrender.
+
 2025-11-19 Version 2.2.4
 
     Updates:
