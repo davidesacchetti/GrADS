@@ -48,6 +48,10 @@ Dettagli completi: changelog_2.2.5.txt e ChangeLog nel repository GrADS.
 - Display X11: screen show scala lo schermo salvato alla finestra
   ridimensionata (XRender) e screen save dopo un ridimensionamento salva
   tutta la finestra, come con Cairo. (2.2.5-18)
+- Estensioni ARPAL: percentile piu' veloce (~2,7x) e senza membri
+  indefiniti nel calcolo; tshift non sposta piu' per sempre l'asse tempo
+  della variabile; shift, raigrid, bterp con la maschera degli indefiniti
+  e senza perdite di memoria. (2.2.5-19)
 - Estensioni ARPAL (libdvd.gex): bilin(expr,lon,lat) e bicub(expr,lon,lat),
   interpolazione bilineare/bicubica in un punto, usate per i profili
   verticali degli skew. (2.2.5-7)

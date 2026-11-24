@@ -161,6 +161,19 @@
       the whole window (the pixmap kept the size of the first save). The
       X11 plug-in is linked with libXrender.
 
+    Fixes (2026-11-24, release 2.2.5-19), ARPAL extensions:
+    * percentile (libperc.gex): selection of the k-th value instead of
+      qsort of pointers, about 2.7 times faster with the same results;
+      undefined members are skipped (they were sorted as numbers); no
+      crash when 'define' is the first command; memory released.
+    * tshift (libdvd.gex): the shift is applied to a copy of the time
+      values, so the source variable is no longer changed for good (a
+      defined variable displayed with tshift stayed shifted); negative
+      shifts normalized; nothing printed at every call.
+    * shift, raigrid, bterp (libdvd.gex): undefined points from the mask;
+      memory leaks removed; bterp checks that the grids vary in lon and
+      lat and no longer releases uninitialized pointers on errors.
+
 2025-11-19 Version 2.2.4
 
     Updates:

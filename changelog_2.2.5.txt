@@ -261,3 +261,28 @@ Aggiornamento del 24 novembre: release 2.2.5-18
 43. release 2.2.5-18
 
 - grads.spec, opengrads.spec: release 18 e voce nel changelog. ChangeLog e readme_dvd.txt aggiornati.
+
+Aggiornamento del 24 novembre: release 2.2.5-19
+
+44. 77e43d5: percentile (arpal/gex/libperc.c)
+
+- Per ogni punto la versione vecchia ordinava con qsort un vettore di puntatori ai valori dei membri (n log n confronti, ognuno con una chiamata a funzione e due indirezioni) e percorreva la griglia per colonne (passo isiz in memoria). Ora copia i valori definiti in un vettore contiguo e sceglie il k-esimo con una quickselect (partizione di Hoare con mediana di tre), visitando i punti nell'ordine della memoria; l'espressione viene valutata una volta per membro (prima una volta in piu' solo per controllarne il tipo). Stesso rango: ceil(p/100*n).
+- Misure (ecepsmem 181x161, 51 membri): variabile definita 42.6-44.2 ms -> 16.2-16.5 ms; dal file il tempo dipende dalla lettura dei membri. Griglie identiche byte per byte (t2 e tp, percentili 5-95, 18 e 24 novembre).
+- I membri indefiniti (umask) non contano: prima entravano nell'ordinamento come numeri (in un punto con 19 membri mascherati 294.065 invece di 294.227).
+- Corretti: crash con 'define p=percentile(...)' come primo comando dopo set t; griglia dell'ultimo membro mai liberata; undef dichiarato char; fnam non inizializzato nei messaggi d'errore; stampa "idx:" a ogni chiamata. Con un solo punto il risultato non va scritto in rmin a parte (grid punta a rmin, umask a umin).
+
+45. 2042179: tshift, shift, raigrid, bterp (arpal/gex/libdvd.c)
+
+- tshift cambiava sul posto i valori del tempo della griglia (ivals/jvals), che sono condivisi con la sorgente (pfi->grvals[3] del file o della variabile definita): in idro_table 'd tshift('precraw',-'halfDt')' spostava per sempre l'asse tempo di precCUM, e anche i membri disegnati dopo risultavano spostati. Ora lavora su una copia in un anello di 16 buffer statici (mai liberati: dopo il display GrADS tiene i puntatori alla scala del grafico); se la griglia ha scale proprie (alocf) le modifica direttamente. Spostamenti negativi con timsub (prima l'ora restava ad es. 6:-90). Niente printf a ogni chiamata. Limite rimasto (anche prima): define non tiene l'asse spostato.
+- shift: sposta anche la maschera; risultato scritto nella griglia stessa (prima sostituita da una malloc e persa).
+- raigrid: punti definiti dalla maschera; liberate le tre griglie di lavoro e i pesi; tolte le coordinate non usate; raggio < 1 restituisce il campo.
+- bterp: controllo delle dimensioni (era 'idim!=0 && idim==1'); griglia sorgente liberata con gagfre (prima solo grid e umask, e con un punto si sarebbe liberato rmin); niente gree di gr1/gr1u non inizializzati sugli errori; celle mancanti dalla maschera (DVDgetValue); tolti idir2/jdir2 (leggevano x2[1] anche con un punto).
+- Provato: shift, raigrid e bterp danno file identici byte per byte alla versione precedente (anche con mascheramenti); bilin e bicub identici; tshift su serie definita, grafico identico, variabile di partenza intatta.
+
+46. f5c4569: doc/arpal.html
+
+- Voci per percentile, tshift, shift, raigrid, bterp.
+
+47. release 2.2.5-19
+
+- grads.spec, opengrads.spec: release 19 e voce nel changelog. ChangeLog e readme_dvd.txt aggiornati.

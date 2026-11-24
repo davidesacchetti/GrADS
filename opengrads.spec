@@ -18,7 +18,7 @@
 #
 Name:           grads
 Version:        2.2.5
-Release:        18%{?dist}
+Release:        19%{?dist}
 Summary:        Tool for easy acces, manipulation, and visualization of data
 
 Group:          Applications/Engineering
@@ -191,6 +191,10 @@ cat udpt | sed -e 's|GRADSPREFIX|%{_prefix}|g' > $RPM_BUILD_ROOT%{_datadir}/%{na
 %endif
 
 %changelog
+* Tue Nov 24 2026 ARPAL Sistemi CMI <sistemi.cmi@arpal.liguria.it> - 2.2.5-19
+- percentile: faster (selection), undefined members skipped, no crash
+- tshift no longer changes the time axis of the source variable;
+  shift, raigrid, bterp: undefined mask, memory leaks, checks
 * Tue Nov 24 2026 ARPAL Sistemi CMI <sistemi.cmi@arpal.liguria.it> - 2.2.5-18
 - X11 display: 'screen show' scales the saved screen to a resized window
   (XRender) and 'screen save' after a resize saves the whole window
