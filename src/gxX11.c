@@ -13,6 +13,7 @@
 #include <X11/Xos.h>
 #include <X11/Xatom.h>
 #include <X11/keysym.h>
+#include <X11/extensions/Xrender.h>
 
 #include "gatypes.h"
 #include "gx.h"
@@ -2811,12 +2812,55 @@ mf*/
 /* Save from displayed window.  Do show operation to current
    window display, sometimes background */
 
+/* ARPAL 2.2.5-18: size of each saved screen. The pixmap is recreated if the
+   window has been resized since the previous save (before, a screen saved
+   again after enlarging the window kept the old size), and 'screen show'
+   scales it to the window when the sizes differ, as the Cairo display does.
+   The scaling is done by the X server (XRender), so with a remote display
+   only the request goes over the network; without XRender the screen is
+   copied unscaled as before. */
+
+static gaint scrw[200], scrh[200];
+
+static void gxscrscl (Pixmap src, gaint sw, gaint sh) {
+XRenderPictFormat *fmt;
+Picture ps, pd;
+XTransform xf;
+int evb, erb;
+  fmt = NULL;
+  if (XRenderQueryExtension(display, &evb, &erb))
+    fmt = XRenderFindVisualFormat(display, DefaultVisual(display, DefaultScreen(display)));
+  if (fmt==NULL) {
+    XCopyArea (display, src, drwbl, gc, 0, 0, width, height, 0, 0);
+    return;
+  }
+  ps = XRenderCreatePicture(display, src, fmt, 0, NULL);
+  pd = XRenderCreatePicture(display, drwbl, fmt, 0, NULL);
+  /* the transform maps destination pixels to source pixels */
+  xf.matrix[0][0] = XDoubleToFixed((double)sw/width);
+  xf.matrix[0][1] = 0; xf.matrix[0][2] = 0;
+  xf.matrix[1][0] = 0;
+  xf.matrix[1][1] = XDoubleToFixed((double)sh/height);
+  xf.matrix[1][2] = 0;
+  xf.matrix[2][0] = 0; xf.matrix[2][1] = 0;
+  xf.matrix[2][2] = XDoubleToFixed(1.0);
+  XRenderSetPictureTransform(display, ps, &xf);
+  XRenderSetPictureFilter(display, ps, FilterBilinear, NULL, 0);
+  XRenderComposite(display, PictOpSrc, ps, None, pd, 0, 0, 0, 0, 0, 0, width, height);
+  XRenderFreePicture(display, ps);
+  XRenderFreePicture(display, pd);
+}
+
 void gxdssv (int frame) {
   if (batch) {
     printf("Error: the screen command does not work in batch mode\n");
     return;
   }
   if (frame<0 || frame>199) return;
+  if (pfilld[frame] && (scrw[frame]!=width || scrh[frame]!=height)) {
+    XFreePixmap (display, pmaps[frame]);
+    pfilld[frame] = 0;
+  }
   if (!pfilld[frame]) {
     pmaps[frame] = XCreatePixmap (display, win, width, height, depth);
     if (pmaps[frame]==(Pixmap)NULL) {
@@ -2825,6 +2869,8 @@ void gxdssv (int frame) {
       return;
     }
     pfilld[frame] = 1;
+    scrw[frame] = width;
+    scrh[frame] = height;
   }
   XCopyArea (display, win, pmaps[frame], gc, 0, 0, width, height, 0, 0);
 }
@@ -2835,7 +2881,11 @@ void gxdssh (int cnt) {
     return;
   }
   if (cnt<0 || cnt>199) return;
-  if (pfilld[cnt]) XCopyArea (display, pmaps[cnt], drwbl, gc, 0, 0, width, height, 0, 0);
+  if (!pfilld[cnt]) return;
+  if (scrw[cnt]==width && scrh[cnt]==height)
+    XCopyArea (display, pmaps[cnt], drwbl, gc, 0, 0, width, height, 0, 0);
+  else
+    gxscrscl (pmaps[cnt], scrw[cnt], scrh[cnt]);
 }
 
 void gxdsfr (int frame) {

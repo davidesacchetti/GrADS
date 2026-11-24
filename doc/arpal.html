@@ -56,6 +56,10 @@ displayed image is redrawn to scale.
 grids, same image.
 <li><b><a href="gradcomdgrads.html">-d</a> option</b> (2.2.5-6): the choice of
 the display plug-in (for example <code>grads -d X11</code>) works again.
+<li><b><a href="gradcomdscreen.html">screen save/show</a> with X11</b>
+(2.2.5-18): after the window has been resized <code>screen show</code> scales
+the saved screen to the window (XRender, done by the X server) and
+<code>screen save</code> saves the whole window, as with Cairo.
 <li><b>Window title</b> (2.2.5-17): command line option
 <a href="gradcomdgrads.html"><code>-T <i>title</i></code></a> and command
 <a href="gradcomdsetwtitle.html"><code>set wtitle <i>title</i></code></a>, with

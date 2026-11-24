@@ -62,6 +62,13 @@ or buffer loaded from a file), <code>screen show</code> scales the buffer to the
 window. After a <code>screen show</code>, when the window is resized the last
 buffer shown is drawn again, scaled to the new size, together with everything
 drawn after it.
+<p>With the X11 display (ARPAL 2.2.5-18) <code>screen show</code> also scales the
+buffer when the window has been resized after the <code>screen save</code>
+(the scaling is done by the X server with XRender, so it is fast also with a
+remote display), and <code>screen save</code> after a resize saves the whole
+window. Before, the buffer was copied at its old size, covering part of the
+window, and a screen saved again after enlarging the window was cut to the
+old size.
 <p>With the Cairo display the saved screens are pixmaps on the X server
 (2.2.5-13): <code>screen save</code> and <code>screen show</code> are copies
 made by the server, so they are fast also with a remote display

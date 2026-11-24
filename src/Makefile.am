@@ -112,7 +112,7 @@ endif
 
 # display X11 
 libgxdX11_la_CPPFLAGS = -I.
-libgxdX11_la_LIBADD = $(X11_ldadd)
+libgxdX11_la_LIBADD = $(X11_ldadd) -lXrender
 libgxdX11_la_LDFLAGS = -version-info $(LIBGX_VERSION)
 
 # print with Cairo
