@@ -43,6 +43,8 @@ Dettagli completi: changelog_2.2.5.txt e ChangeLog nel repository GrADS.
   file (es. GHnorm nelle sezioni oblique). (2.2.5-16)
 - q xy2gr e q w2gr non vanno piu' in crash sui grafici con asse tempo. (2.2.5-16)
 - set rband line su X11: segmento dal click al puntatore come su Cairo. (2.2.5-16)
+- Titolo della finestra: grads -T "titolo" e 'set wtitle titolo', senza
+  xprop/xdotool. (2.2.5-17)
 - Estensioni ARPAL (libdvd.gex): bilin(expr,lon,lat) e bicub(expr,lon,lat),
   interpolazione bilineare/bicubica in un punto, usate per i profili
   verticali degli skew. (2.2.5-7)
@@ -116,3 +118,7 @@ Dettagli completi: changelog_2.2.5.txt e ChangeLog nel repository GrADS.
   named pipe); handshake con il file <fifo>.ack, cosi' lo skew non resta
   indietro quando e' piu' lento del mouse (ssh -X); lo skew usa lo stesso
   display (Cairo/X11) di gridview, letto da 'q gxconfig'.
+- gridview9.gs: sezioni continue LIVE_E-W, LIVE_S-N, LIVE_VERT (due
+  finestre), LIVE_TIME, LIVE_ANG (collect/coll2gr senza file); valore sotto
+  il mouse in un riquadro fisso; titolo delle finestre col nome del dataset
+  e il tipo (grads -T, set wtitle).

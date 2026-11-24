@@ -232,3 +232,16 @@ Aggiornamento del 24 novembre: release 2.2.5-16
 38. release 2.2.5-16
 
 - grads.spec, opengrads.spec: release 16 e voce nel changelog. ChangeLog e readme_dvd.txt aggiornati.
+
+Aggiornamento del 24 novembre: release 2.2.5-17
+
+39. f5a4f38: titolo della finestra grafica (src/grads.c, src/gauser.c, src/gxsubs.c, src/gx.h, src/gxX.c, src/gxX11.c, doc/)
+
+- La finestra si chiamava sempre "GrADS 2.2.5": per le finestre aperte da gridview9.gs (skew e sezioni continue) il titolo veniva cambiato con xdotool o xprop, che su alcune macchine mancano. Ora 'grads -T "titolo"' imposta il titolo prima che la finestra venga creata e 'set wtitle titolo' lo cambia dopo (il resto della riga, con maiuscole e minuscole), anche da script.
+- gxsubs.c: gxwtitle() tiene il titolo finche' la grafica non parte e lo passa al plug-in subito prima di gxdbgn; dopo rinomina la finestra aperta. Nei plug-in Cairo (gxX.c) e X11 (gxX11.c) la nuova funzione gxdtitle imposta window_name/icon_name e, se la finestra esiste, XStoreName e XSetIconName. E' un simbolo opzionale (come gxdsdp/gxdsld): con un plug-in che non lo ha il titolo viene ignorato. In batch non fa nulla.
+- gauser.c: la tabella delle parole chiave di set passa a 131 voci (WTITLE).
+- Provato con Cairo e X11: -T da' il titolo gia' all'apertura, set wtitle lo cambia (verificato con xprop WM_NAME e WM_ICON_NAME); set wtitle senza argomento da' l'errore di set.
+
+40. release 2.2.5-17
+
+- grads.spec, opengrads.spec: release 17 e voce nel changelog. ChangeLog e readme_dvd.txt aggiornati.

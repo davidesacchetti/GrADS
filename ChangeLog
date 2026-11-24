@@ -146,6 +146,13 @@
       time-height sections); the other axis is converted with the default
       file.
 
+    Updates (2026-11-24, release 2.2.5-17):
+    * Window title: command line option -T title and command
+      'set wtitle title' (Cairo and X11 displays, no external tools such
+      as xprop or xdotool). The display plug-ins have the new optional
+      entry gxdtitle; plug-ins without it keep working, the title is
+      ignored. Ignored in batch mode.
+
 2025-11-19 Version 2.2.4
 
     Updates:
