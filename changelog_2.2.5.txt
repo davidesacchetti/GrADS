@@ -213,3 +213,22 @@ Aggiornamento del 23 novembre: release 2.2.5-15
 34. release 2.2.5-15
 
 - grads.spec, opengrads.spec: release 15 e voce nel changelog. ChangeLog e readme_dvd.txt aggiornati.
+
+Aggiornamento del 24 novembre: release 2.2.5-16
+
+35. b622d8e: coll2gr con asse X lineare (src/gafunc.c, doc/gradfunccoll2gr.html)
+
+- La griglia restituita da coll2gr aveva l'asse X non lineare (ilinr=0): combinata con una griglia di un file (es. coll2gr(..)-lev, usato da GHnorm) gagchk la rifiutava con "one axis is linear and the other is non-linear". Le stazioni sono equispaziate sull'intervallo X dell'ambiente, quindi c2glin descrive l'asse come uno xdef LINEAR (grvals = incr, start-incr; abvals = 1/incr, -(start-incr)/incr; liconv). iv ha sempre almeno 6 valori. Vale sia per la sezione X-Z sia per quella 1-D.
+- Serve alle sezioni oblique continue (LIVE_ANG) di gridview9.gs, fatte con collect/coll2gr senza scrivere file.
+
+36. c3172b1: set rband line sul display X11 (src/gxX11.c, doc/gradcomdsetrband.html)
+
+- In modalita' line il segmento veniva disegnato tra gli angoli riordinati del box, quindi trascinando verso l'alto a destra o verso il basso a sinistra si vedeva l'altra diagonale. Ora va dal punto del click al puntatore (limitato alla regione), come sul display Cairo.
+
+37. eb0fa49: q xy2gr e q w2gr sui grafici con asse tempo (src/gauser.c, doc/arpal.html)
+
+- Su una sezione tempo-quota (o tempo-longitudine) i puntatori di conversione dell'altro asse non erano impostati in modo coerente e 'q xy2gr' mandava GrADS in segmentation fault (anche nella -15). gaxy2grc usa in quel caso la conversione del file di default per quella dimensione; l'asse tempo resta in unita' di griglia. Provato: 12Z18NOV2026 a 850 hPa da' T=3, Z=5 con w2gr.
+
+38. release 2.2.5-16
+
+- grads.spec, opengrads.spec: release 16 e voce nel changelog. ChangeLog e readme_dvd.txt aggiornati.

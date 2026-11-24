@@ -133,6 +133,19 @@
       cleared by gainit(); after a reset 'q gxconfig' showed an empty
       display name ("" and "(null)").
 
+    Updates and fixes (2026-11-24, release 2.2.5-16):
+    * coll2gr: the X axis of the result is described as linear (the
+      collected stations are equally spaced in the X range), so the
+      result can be combined with grids of the files (e.g. coll2gr(..)-lev)
+      instead of failing with "one axis is linear and the other is
+      non-linear".
+    * set rband line, X11 display: the line goes from the click point to
+      the pointer, as with Cairo (before the end points were sorted like
+      the corners of a box, so the line could be the other diagonal).
+    * q xy2gr, q w2gr: no more crash on plots with a time axis (e.g.
+      time-height sections); the other axis is converted with the default
+      file.
+
 2025-11-19 Version 2.2.4
 
     Updates:

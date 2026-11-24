@@ -18,7 +18,7 @@
 #
 Name:           grads
 Version:        2.2.5
-Release:        15%{?dist}
+Release:        16%{?dist}
 Summary:        Tool for easy acces, manipulation, and visualization of data
 
 Group:          Applications/Engineering
@@ -191,6 +191,10 @@ cat udpt | sed -e 's|GRADSPREFIX|%{_prefix}|g' > $RPM_BUILD_ROOT%{_datadir}/%{na
 %endif
 
 %changelog
+* Tue Nov 24 2026 ARPAL Sistemi CMI <sistemi.cmi@arpal.liguria.it> - 2.2.5-16
+- coll2gr: linear X axis, the result can be combined with file grids
+- set rband line (X11): line from the click point to the pointer
+- q xy2gr, q w2gr: no crash on plots with a time axis
 * Mon Nov 23 2026 ARPAL Sistemi CMI <sistemi.cmi@arpal.liguria.it> - 2.2.5-15
 - reset/reinit no longer clear the display plug-in name and the window
   geometry given on the command line ('q gxconfig' showed an empty name)
