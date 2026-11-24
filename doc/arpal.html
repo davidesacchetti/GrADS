@@ -79,6 +79,21 @@ files (e.g. <code>coll2gr(1,-u)-lev</code>).
 <li><b><a href="gradfuncbilin.html">bilin(), bicub()</a></b> (2.2.5-7):
 bilinear and bicubic interpolation at a point (ARPAL extension
 <code>libdvd.gex</code>).
+<li><b>percentile(expr,e=e1,e=e2,p)</b> (extension <code>libperc.gex</code>,
+2.2.5-19): for each grid point the value of rank ceil(p/100*n) among the n
+defined members. About 2.7 times faster (selection instead of sorting), the
+undefined members are skipped (before they were sorted as numbers), no crash
+with <code>define</code> as first command.
+<li><b>tshift(expr,minutes)</b> (extension <code>libdvd.gex</code>,
+2.2.5-19): moves the time axis of the result by the given minutes, e.g.
+<code>d tshift(prec,-90)</code> to draw a histogram half a step back. The
+shift is applied to a copy: before it moved for good the time axis of the
+variable (for example of a defined variable used again afterwards).
+Note: <code>define</code> does not keep the shifted time axis.
+<li><b>shift(expr,dx,dy), raigrid(expr,radius), bterp(expr,grid)</b>
+(extension <code>libdvd.gex</code>, 2.2.5-19): undefined points taken from
+the mask, memory released at every call; <code>bterp</code> checks that both
+grids vary in lon and lat.
 <li><b><a href="gradcomdquery.html">q xy2gr, q w2gr</a></b> (2.2.5-16): no
 longer crash GrADS on plots with time on one axis (time-height,
 time-longitude).
