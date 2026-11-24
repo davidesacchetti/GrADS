@@ -1533,12 +1533,22 @@ int ilo,ihi,jlo,jhi;
            XDrawRectangle(display, win, gc, i1o, j1o, i2o-i1o, j2o-j1o);
         else XDrawLine (display, win, gc, i1o, j1o, i2o, j2o);
       }
-      if (i<report.xmotion.x) { i1 = i; i2 = report.xmotion.x; }
-      else { i2 = i; i1 = report.xmotion.x; }
-      if (j<report.xmotion.y) { j1 = j; j2 = report.xmotion.y; }
-      else { j2 = j; j1 = report.xmotion.y; }
-      if (i1<ilo) i1 = ilo; if (i2>ihi) i2 = ihi;
-      if (j1<jlo) j1 = jlo; if (j2>jhi) j2 = jhi;
+      if (typ==1) {
+        /* box: corners sorted for XDrawRectangle */
+        if (i<report.xmotion.x) { i1 = i; i2 = report.xmotion.x; }
+        else { i2 = i; i1 = report.xmotion.x; }
+        if (j<report.xmotion.y) { j1 = j; j2 = report.xmotion.y; }
+        else { j2 = j; j1 = report.xmotion.y; }
+        if (i1<ilo) i1 = ilo; if (i2>ihi) i2 = ihi;
+        if (j1<jlo) j1 = jlo; if (j2>jhi) j2 = jhi;
+      } else {
+        /* line (ARPAL 2.2.5-16): from the click to the pointer; sorting the
+           ends drew the other diagonal when dragging up-right or down-left */
+        i1 = i; j1 = j;
+        i2 = report.xmotion.x; j2 = report.xmotion.y;
+        if (i2<ilo) i2 = ilo; if (i2>ihi) i2 = ihi;
+        if (j2<jlo) j2 = jlo; if (j2>jhi) j2 = jhi;
+      }
       if (typ==1) XDrawRectangle (display, win, gc, i1, j1, i2-i1, j2-j1);
       else XDrawLine (display, win, gc, i1, j1, i2, j2);
       i1o=i1; i2o=i2; j1o=j1; j2o=j2; xoflg = 1;
