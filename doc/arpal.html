@@ -40,6 +40,9 @@ of the mouse without waiting for a click; -999.9 outside the window.
 <li><b><a href="gradcomdqpos.html">q pos keys</a></b> (2.2.5-12): key presses
 in the graphics window (class 4, X keysym: arrows 65361-65364). Without
 <code>keys</code> the keys are ignored as before.
+<li><b><a href="gradcomdsetrband.html">set rband line</a></b> (2.2.5-16):
+with the X11 display the line goes from the click to the pointer in every
+direction.
 <li><b><a href="gradcomdscreen.html">screen dump / screen load</a></b>
 (2.2.5-8): saved screens written to PNG files and read back, also in another
 session; <code>screen show</code> scales the buffer to the window.
@@ -61,9 +64,15 @@ the display plug-in (for example <code>grads -d X11</code>) works again.
 and <b><a href="gradfunccoll2gr.html">coll2gr()</a></b> with only X varying
 (2.2.5-1): 1-D sections, oblique sections of variables not depending on Z,
 <code>define</code> of X-Z sections.
+<li><b><a href="gradfunccoll2gr.html">coll2gr()</a></b> (2.2.5-16): the X
+axis of the result is linear, so it can be combined with the grids of the
+files (e.g. <code>coll2gr(1,-u)-lev</code>).
 <li><b><a href="gradfuncbilin.html">bilin(), bicub()</a></b> (2.2.5-7):
 bilinear and bicubic interpolation at a point (ARPAL extension
 <code>libdvd.gex</code>).
+<li><b><a href="gradcomdquery.html">q xy2gr, q w2gr</a></b> (2.2.5-16): no
+longer crash GrADS on plots with time on one axis (time-height,
+time-longitude).
 <li><b><a href="gradcomdquery.html">q config</a></b> (2.2.5-9): a line with the
 complete release, for example <code>Release 2.2.5-12.fc44</code>.
 <li><b><a href="gradcomdquery.html">q gxconfig</a></b> (2.2.5-14): the lines

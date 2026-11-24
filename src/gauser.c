@@ -2822,6 +2822,32 @@ static char *gxoutStn[10]  = {"0", "Value", "Barb", "Findstn", "Model",
 
 char *dweek[8] = {"Sun","Mon","Tue","Wed","Thu","Fri","Sat","???"};
 
+/* World coordinate -> grid coordinate on the X (ax=0) or Y (ax=1) axis of
+   the last plot, for 'q xy2gr' and 'q w2gr'. A time axis is already in grid
+   units. ARPAL 2.2.5-16: when the other axis is time (time-height or
+   time-longitude plots) the conversion pointers of the plot are not set up
+   consistently (the call crashed GrADS): the conversion of the default file
+   for that dimension is used instead. */
+
+static gadouble gaxy2grc (struct gacmn *pcm, gaint ax, gadouble v) {
+gadouble (*conv) (gadouble *, gadouble);
+gadouble *vals;
+gaint dim;
+  dim = ax ? pcm->ydim : pcm->xdim;
+  if (dim==3 || dim<0 || dim>4) return (v);
+  conv = ax ? pcm->yab2gr : pcm->xab2gr;
+  vals = ax ? pcm->yabval : pcm->xabval;
+  if (pcm->xdim==3 || pcm->ydim==3) {
+    conv = NULL; vals = NULL;
+    if (pcm->pfid) {
+      conv = pcm->pfid->ab2gr[dim];
+      vals = pcm->pfid->abvals[dim];
+    }
+  }
+  if (conv && vals) return (conv(vals, v));
+  return (v);
+}
+
 gaint gaqury (char *cmd, char *ccc, struct gacmn *pcm) {
 struct gafile *pfi;
 struct gavar *pvar;
@@ -3719,12 +3745,8 @@ gadouble minvals[4], maxvals[4],dval;
       if (getdbl(arg,&lat) == NULL ) goto errw;
     }
     if (flag) {
-      conv = pcm->xab2gr;
-      x = lon;
-      if (conv && pcm->xdim!=3) x = conv(pcm->xabval, lon);
-      conv = pcm->yab2gr;
-      y = lat;
-      if (conv && pcm->ydim!=3) y = conv(pcm->yabval, lat);
+      x = gaxy2grc(pcm, 0, lon);
+      y = gaxy2grc(pcm, 1, lat);
       snprintf(pout,1255,"%s = %g  %s = %g\n", ccdims[pcm->xdim], x, ccdims[pcm->ydim], y);
       gaprnt(2,pout);
     } else {
@@ -3818,16 +3840,10 @@ gadouble minvals[4], maxvals[4],dval;
     } else {
       gxxy2w (x,y,&lon,&lat);
       if (flag) {
-        conv = pcm->xab2gr;
         x = lon;
-        if (lon>-999.0) {
-          if (conv && pcm->xdim!=3) x = conv(pcm->xabval, lon);
-        }
-        conv = pcm->yab2gr;
+        if (lon>-999.0) x = gaxy2grc(pcm, 0, lon);
         y = lat;
-        if (lat>-999.0) {
-          if (conv && pcm->ydim!=3) y = conv(pcm->yabval, lat);
-        }
+        if (lat>-999.0) y = gaxy2grc(pcm, 1, lat);
         snprintf(pout,1255,"%s = %g  %s = %g\n",ccdims[pcm->xdim],x,ccdims[pcm->ydim],y);
         gaprnt(2,pout);
       } else {
