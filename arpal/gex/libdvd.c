@@ -46,8 +46,8 @@ int DVDfindOffset(gadouble, gadouble, gadouble);
 void DVDfindRange(gadouble, gadouble, gadouble, gadouble, int, int, gadouble, gadouble, gadouble, gadouble, int *);
 gadouble DVDintercept(gadouble, gadouble, gadouble, gadouble);
 gadouble DVDfindDelta(gadouble *, int);
-gadouble DVDgetValue(gadouble *, gadouble, gadouble *, gadouble *, gadouble, gadouble, int, int, gadouble, gadouble, gadouble, gadouble, gadouble);
-void DVDboxAverage(gadouble *, gadouble, gadouble *, gadouble *, int, int, gadouble *, gadouble, gadouble *, gadouble *, int, int);
+gadouble DVDgetValue(gadouble *, char *, gadouble *, gadouble *, gadouble, gadouble, int, int, gadouble, gadouble, gadouble, gadouble, gadouble);
+void DVDboxAverage(gadouble *, char *, gadouble *, gadouble *, int, int, gadouble *, gadouble, gadouble *, gadouble *, int, int);
 
 /* GrADS v1.x compatibility functions */
 int gex_expr1(char *expr, struct gastat *pst);
@@ -154,598 +154,360 @@ char *usg1var[3] = {"bterp\nusage: d bterp(expr,reference_grid)\n",
 
 /* -------------------------------------------------------- */
 /*
-  dvd - Performs grid shift
+  dvd - grid shift: shift(expr,dx,dy) moves the values of expr by dx grid
+  points along the 1st varying dimension and dy along the 2nd (the points
+  left uncovered are undefined).
+
+  ARPAL 2.2.5-19: the undefined points (umask) are moved too: before only
+  the values were moved, so an undefined point (whose value in the grid can
+  be anything) became defined; the result is written in the grid itself
+  (the source grid was leaked, replaced by a malloc'ed one).
 */
 gaint ffDVDshift (struct gafunc *pfc, struct gastat *pst) {
-  gaint rc,isiz,jsiz,nn,error=0,i,j;
-  gadouble *gr;
-  gadouble *xx=NULL,*yy=NULL,undef;
-  gadouble (*iconv) (gadouble *, gadouble);
+  gaint rc, isiz, jsiz, nn, i, j, k, is, js, ioff, joff;
+  gadouble xshift, yshift, *gr, *tg=NULL;
   struct gagrid *pgr;
-  char *gru;
-  size_t sz;
-  float xshift,yshift;
-  gadouble *xgrid_out;
+  char *gru, *tu=NULL;
 
-  /* Evaluate args number */
   if (pfc->argnum!=3) {
-    gaprnt (0,"Error from SHIFT: Three arguments expected\n");
+    gaprnt (0,"Error from shift: Three arguments expected: shift(expr,dx,dy)\n");
     return (1);
   }
+  if (valprs(pfc->argpnt[1],&xshift)==NULL || valprs(pfc->argpnt[2],&yshift)==NULL) {
+    gaprnt (0,"Error from shift: the 2nd and 3rd arguments must be numbers of grid points\n");
+    return (1);
+  }
+  ioff = (gaint)xshift;
+  joff = (gaint)yshift;
 
-  /* Evaluate the 1st expression, type = grid */
   rc = gaexpr(pfc->argpnt[0],pst);
-  if (rc) { error=1; goto err; }
+  if (rc) return (rc);
   if (pst->type!=1) {
-    gaprnt (0,"Error from SHIFT: The 1st argument is not a grid expression \n");
-    error=1; goto err;
-  }
-
-  /* Evaluate the 2st expression, type = number, the x-shift */
-  if (valprs(pfc->argpnt[1],&xshift)==NULL) {
-    sprintf (pout,"Error from %s: Invalid Argument\n","xshift");
-    gaprnt (0,pout);
-    sprintf (pout,"  Expecting arg%d: %s to be a value\n",2,pfc->argpnt[1]);
-    gaprnt (0,pout);
+    gaprnt (0,"Error from shift: The 1st argument is not a grid expression \n");
+    gafree (pst);
     return (1);
   }
-  /* nearbyint from tgmath.h */
-  //int ioff=nearbyint(xshift);
-  int ioff=xshift;
+  pgr = pst->result.pgr;
+  if (ioff==0 && joff==0) return (0);
 
-  /* Evaluate the 3st expression, type = number, the y-shift */
-  if (valprs(pfc->argpnt[2],&yshift)==NULL) {
-    sprintf (pout,"Error from %s: Invalid Argument\n","yshift");
-    gaprnt (0,pout);
-    sprintf (pout,"  Expecting arg%d: %s to be a value\n",3,pfc->argpnt[2]);
-    gaprnt (0,pout);
-    return (1);
-  }
-  //int joff=nearbyint(yshift);
-  int joff=yshift;
-
-  /* Get the grid */
-  pgr = pst->result.pgr;     /* grid */
+  isiz = pgr->isiz;
+  jsiz = pgr->jsiz;
+  nn = isiz*jsiz;
   gr  = pgr->grid;
   gru = pgr->umask;
-
-  isiz=pgr->isiz;
-  jsiz=pgr->jsiz;
-  undef=pgr->undef;
-  nn=isiz*jsiz;
-
-  /* init vecs */
-  xgrid_out=(float *)malloc(sizeof(float)*(nn));
-  for(i=0;i<isiz*jsiz;i++){
-   *(xgrid_out + i)=undef;
+  tg = (gadouble *)malloc(sizeof(gadouble)*nn);
+  tu = (char *)malloc(nn);
+  if (tg==NULL || tu==NULL) {
+    gaprnt (0,"Error from shift: memory allocation error\n");
+    free(tg); free(tu); gafree(pst);
+    return (1);
   }
-
-  /* defining grid */
-  int ishift,jshift;
-  for(i=0;i<isiz;i++){
-    ishift=i+ioff;
-    if(ishift<0 || ishift>=isiz) continue;
-    for(j=0;j<jsiz;j++){
-      jshift=j+joff;
-      if(jshift<0 || jshift>=jsiz) continue;
-      xgrid_out[isiz*jshift+ishift]=*(gr + (isiz*j) + i);
+  memcpy(tg, gr, sizeof(gadouble)*nn);
+  memcpy(tu, gru, nn);
+  for (k=0; k<nn; k++) { gr[k] = pgr->undef; gru[k] = 0; }
+  for (j=0; j<jsiz; j++) {
+    js = j + joff;
+    if (js<0 || js>=jsiz) continue;
+    for (i=0; i<isiz; i++) {
+      is = i + ioff;
+      if (is<0 || is>=isiz) continue;
+      if (!tu[isiz*j+i]) continue;
+      gr[isiz*js+is]  = tg[isiz*j+i];
+      gru[isiz*js+is] = 1;
     }
   }
-
-  /* saving output grid */
-  pgr->grid = xgrid_out;
-
-err:
-  /* release memory */
-  if (error) if (pst) gafree (pst); 
-  if (error) 
-    return 1;
-  else 
-    return 0;
-
+  free(tg);
+  free(tu);
+  return (0);
 }
 
 /* -------------------------------------------------------- */
 /*
-  dvd - Performs PERMANENT TIME shift
+  dvd - time shift: tshift(expr,minutes) returns expr with its time axis
+  moved by the given number of minutes (negative = back in time).
+
+  ARPAL 2.2.5-19: the shift is applied to a copy of the time values of the
+  result grid. Before, they were changed in place, but they are shared with
+  the source (pfi->grvals[3] of the file or of the defined variable):
+  'd tshift(var,-90)' moved for good the time axis of a defined variable
+  'var'. The copies are kept in a ring of static buffers, never released:
+  after a display GrADS keeps pointers to the scaling of the plot (q xy2w,
+  q w2xy...), that must stay valid after the grid is released. If the grid
+  has its own scaling (alocf) it is changed in place. Negative shifts are
+  normalized (the minutes stayed negative, e.g. 6:-90), and nothing is
+  printed at every call.
 */
+#define TSNBUF 16
+static gadouble tsbuf[TSNBUF][8];
+static gaint tsnext = 0;
+
 gaint ffDVDtimeShift (struct gafunc *pfc, struct gastat *pst) {
-  gaint rc,isiz,jsiz,nn,error=0,i,j;
-  gadouble *gr;
-  gadouble *xx=NULL,*yy=NULL,undef;
-  gadouble (*iconv) (gadouble *, gadouble);
+  gaint rc, toff, i;
+  gadouble tshift;
   struct gagrid *pgr;
-  char *gru;
-  size_t sz;
-  float tshift;
+  struct dt Delta, Time, Res;
+  gadouble *tv;
 
   /* Evaluate args number */
   if (pfc->argnum!=2) {
-    gaprnt (0,"Error from SHIFT: Two arguments expected\n");
+    gaprnt (0,"Error from tshift: Two arguments expected: tshift(expr,minutes)\n");
     return (1);
   }
 
+  /* 2nd argument: the time shift in minutes */
+  if (valprs(pfc->argpnt[1],&tshift)==NULL) {
+    gaprnt (0,"Error from tshift: the 2nd argument must be a number of minutes\n");
+    return (1);
+  }
+  toff = (gaint)tshift;
+
   /* Evaluate the 1st expression, type = grid */
   rc = gaexpr(pfc->argpnt[0],pst);
-  if (rc) { error=1; goto err; }
+  if (rc) return (rc);
   if (pst->type!=1) {
-    gaprnt (0,"Error from SHIFT: The 1st argument is not a grid expression \n");
-    error=1; goto err;
+    gaprnt (0,"Error from tshift: The 1st argument is not a grid expression \n");
+    gafree (pst);
+    return (1);
+  }
+  pgr = pst->result.pgr;
+
+  /* nothing to do without shift or if time does not vary */
+  if (toff==0 || (pgr->idim!=3 && pgr->jdim!=3)) return (0);
+
+  /* time values of the grid (8 values: yr mo dy hr mn, increments) */
+  if (pgr->jdim==3) tv = pgr->jvals;
+  else              tv = pgr->ivals;
+  if (tv==NULL) return (0);
+  /* shared with the source: work on a copy */
+  if (!pgr->alocf) {
+    for (i=0; i<8; i++) tsbuf[tsnext][i] = tv[i];
+    tv = tsbuf[tsnext];
+    tsnext = (tsnext+1) % TSNBUF;
+    if (pgr->jdim==3) pgr->jvals = tv;
+    else              pgr->ivals = tv;
   }
 
-  /* Evaluate the 2st expression, type = number, the time-shift [mn] */
-  if (valprs(pfc->argpnt[1],&tshift)==NULL) {
-    tshift = 0;
-  }
-  //int toff=nearbyint(tshift);
-  int toff=tshift;
-
-  /* Get the grid */
-  pgr = pst->result.pgr;     /* grid */
-
-  /* time shift */
-  if (toff && (pgr->idim == 3 || pgr->jdim == 3)) {
-    struct dt Delta;
-//    int tnegative = 0;
-//    if (toff<0) {
-//      toff *= -1;
-//      tnegative = 1;
-//    }
-    Delta.yr = 0;
-    Delta.mo = 0;
-    Delta.dy = 0;
-    Delta.hr = 0;
+  /* initial time of the time axis */
+  Time.yr = (gaint)tv[0];
+  Time.mo = (gaint)tv[1];
+  Time.dy = (gaint)tv[2];
+  Time.hr = (gaint)tv[3];
+  Time.mn = (gaint)tv[4];
+  Delta.yr = 0; Delta.mo = 0; Delta.dy = 0; Delta.hr = 0;
+  if (toff>0) {
     Delta.mn = toff;
-    struct dt Time;
-    if (pgr->jdim == 3) {
-      Time.yr = (int) pgr->jvals[0];
-      Time.mo = (int) pgr->jvals[1];
-      Time.dy = (int) pgr->jvals[2];
-      Time.hr = (int) pgr->jvals[3];
-      Time.mn = (int) pgr->jvals[4];
-      printf("\n>>> tshift in Jdim: %d.%d.%d %d:%d -> ", Time.yr, Time.mo, Time.dy, Time.hr, Time.mn);
-//      if (tnegative) {
-//	timsub(&Delta, &Time);
-//      } else {
-	timadd(&Delta, &Time);
-//      }
-      printf("%d.%d.%d %d:%d PERMANENT\n", Time.yr, Time.mo, Time.dy, Time.hr, Time.mn);
-      pgr->jvals[0] = (float) Time.yr;
-      pgr->jvals[1] = (float) Time.mo;
-      pgr->jvals[2] = (float) Time.dy;
-      pgr->jvals[3] = (float) Time.hr;
-      pgr->jvals[4] = (float) Time.mn;
-    } else {
-      Time.yr = (int) pgr->ivals[0];
-      Time.mo = (int) pgr->ivals[1];
-      Time.dy = (int) pgr->ivals[2];
-      Time.hr = (int) pgr->ivals[3];
-      Time.mn = (int) pgr->ivals[4];
-      printf("\n>>> tshift on Idim: %d.%d.%d %d:%d -> ", Time.yr, Time.mo, Time.dy, Time.hr, Time.mn);
-//      if (tnegative) {
-//	timsub(&Delta, &Time);
-//      } else {
-	timadd(&Delta, &Time);
-//      }
-      printf("%d.%d.%d %d:%d PERMANENT\n\n", Time.yr, Time.mo, Time.dy, Time.hr, Time.mn);
-      pgr->ivals[0] = (float) Time.yr;
-      pgr->ivals[1] = (float) Time.mo;
-      pgr->ivals[2] = (float) Time.dy;
-      pgr->ivals[3] = (float) Time.hr;
-      pgr->ivals[4] = (float) Time.mn;
-    }
+    Res = Time;
+    timadd(&Delta, &Res);           /* Res = Time + Delta */
+  } else {
+    Delta.mn = -toff;
+    Res = Delta;
+    timsub(&Time, &Res);            /* Res = Time - Delta */
   }
-
-err:
-  /* release memory */
-  if (error) if (pst) gafree (pst); 
-  if (error) 
-    return 1;
-  else 
-    return 0;
-
+  tv[0] = Res.yr;
+  tv[1] = Res.mo;
+  tv[2] = Res.dy;
+  tv[3] = Res.hr;
+  tv[4] = Res.mn;
+  /* for time the abs <-> grid conversion uses the same values */
+  if (pgr->jdim==3) pgr->javals = tv;
+  else              pgr->iavals = tv;
+  return (0);
 }
 
 /* -------------------------------------------------------- */
 /*
-  dvd - Performs 1/(d^2) averaging
+  dvd - raigrid(expr,radius): spreads the defined values of a sparse grid
+  (e.g. binned rain gauges) to the grid points within radius (grid units),
+  with weights 1/d^2 (the point itself has weight 4); the defined points
+  keep their value, the points out of reach of all the data stay undefined.
+  Lon and lat must be the varying dimensions.
+
+  ARPAL 2.2.5-19: the defined points are those of the mask (umask), not
+  those whose value differs from undef (an undefined point can have any
+  value); the result is written in the grid itself and the work arrays are
+  released (the grid of the expression and three arrays were leaked at
+  every call); the unused coordinates are no more computed.
 */
 gaint ffDVDraigrid (struct gafunc *pfc, struct gastat *pst) {
-  gaint rc,i,j,error=0,isiz,jsiz,nn,krad,k;
-  gadouble *gr;
-  gadouble *xx=NULL,*yy=NULL,undef;
-  gadouble (*iconv) (gadouble *, gadouble);
+  gaint rc, i, j, k, isiz, jsiz, nn, krad, ksiz, is, js, ig, jg;
+  gadouble radius, *gr, *sum=NULL, *wsum=NULL, *weight=NULL, w, v;
   struct gagrid *pgr;
-  char *gru;
-  size_t sz;
-  float radius;
-  char method[]="1/d2";
-  float *weight_out, *weight;
-  gadouble *xgrid_out;
-  int LOG=0;
-  int istaz,jstaz,igrid,jgrid;
-  float wght,xgrid_staz;
+  char *gru, *wok=NULL;
 
-  /* Evaluate args number */
   if (pfc->argnum<2 || pfc->argnum>3) {
-    gaprnt (0,"Error from RAIGRID: Two or Three arguments expected\n");
+    gaprnt (0,"Error from raigrid: Two arguments expected: raigrid(expr,radius)\n");
     return (1);
   }
-
-  /* Evaluate the 1st expression, type = grid, the binned data values to be filtered */
-  rc = gaexpr(pfc->argpnt[0],pst);
-  if (rc) { error=1; goto err; }
-  if (pst->type!=1) {
-    gaprnt (0,"Error from RAIGRID: The 1st argument is not a grid expression \n");
-    error=1; goto err;
-  }
-
-  /* Evaluate the 2st expression, type = number, the radius of the filter */
   if (valprs(pfc->argpnt[1],&radius)==NULL) {
-    sprintf (pout,"Error from %s: Invalid Argument\n","radius");
-    gaprnt (0,pout);
-    sprintf (pout,"  Expecting arg%d: %s to be a value\n",2,pfc->argpnt[1]);
+    sprintf (pout,"Error from raigrid: Expecting arg2: %s to be the radius in grid points\n",pfc->argpnt[1]);
     gaprnt (0,pout);
     return (1);
   }
-  krad=radius+0.5;
-  int ksiz=2*krad+1;
+  krad = (gaint)(radius+0.5);
+  ksiz = 2*krad+1;
 
-  /* Evaluate the 3st expression, type = string, the method of the filter */
-  if (pfc->argnum>2) {
-    getwrd(method,pfc->argpnt[2],4);
-    lowcas(method);
+  rc = gaexpr(pfc->argpnt[0],pst);
+  if (rc) return (rc);
+  if (pst->type!=1) {
+    gaprnt (0,"Error from raigrid: The 1st argument is not a grid expression \n");
+    gafree (pst);
+    return (1);
   }
-
-  #ifdef DVDlog
-  printf ("radius:%f method:<%s>\n",radius,method);
-  #endif
-
-  /* Check environment */
-  if (pst->idim!=0) {
-    gaprnt (0,"Error from RAIGRID: The first varying dimension must be X \n");
-    error=1; goto err;
+  pgr = pst->result.pgr;
+  if (pgr->idim!=0 || pgr->jdim!=1) {
+    gaprnt (0,"Error from raigrid: The varying dimensions must be X and Y \n");
+    gafree (pst);
+    return (1);
   }
-  if (pst->jdim!=1) {
-    gaprnt (0,"Error from RAIGRID: The second varying dimension must be Y \n");
-    error=1; goto err;
-  }
-
-  /* Get the grid */
-  pgr = pst->result.pgr;     /* grid */
+  /* radius below 1 grid point: nothing to spread */
+  if (krad<1) return (0);
+  isiz = pgr->isiz;
+  jsiz = pgr->jsiz;
+  nn = isiz*jsiz;
   gr  = pgr->grid;
   gru = pgr->umask;
 
-  /* define output grid */
-//  gr2  = pgr2->grid;
-
-  /* get i dim coordinates (generic) */
-  if (pgr->idim>-1) {
-    xx = NULL;
-    sz = sizeof(gadouble)*pgr->isiz;
-    xx = (gadouble *)galloc(sz,"xx");
-    if (xx==NULL) { error=1; goto err; }
-    if (pgr->idim==3) {
-      j=0;
-      for (i=pgr->dimmin[pgr->idim];i<=pgr->dimmax[pgr->idim];i++) {
-	*(xx+j) = (gadouble)i;
-	j++;
-      }
-    } else {
-      iconv = pgr->igrab;
-      j=0;
-      for (i=pgr->dimmin[pgr->idim];i<=pgr->dimmax[pgr->idim];i++) {
-	*(xx+j) = iconv(pgr->ivals,(gadouble)i);
-	j++;
-      }
-    }
-  }
-  /* get j dim coordinates (generic) */
-  if (pgr->jdim>-1) {
-    yy = NULL;
-    sz = sizeof(gadouble)*pgr->jsiz;
-    yy = (gadouble *)galloc(sz,"yy");
-    if (yy==NULL) { error=1; goto err; }
-    if (pgr->jdim==3) {
-      j=0;
-      for (i=pgr->dimmin[pgr->jdim];i<=pgr->dimmax[pgr->jdim];i++) {
-	*(yy+j) = (gadouble)i;
-	j++;
-      }
-    } else {
-      iconv = pgr->jgrab;
-      j=0;
-      for (i=pgr->dimmin[pgr->jdim];i<=pgr->dimmax[pgr->jdim];i++) {
-	*(yy+j) = iconv(pgr->jvals,(gadouble)i);
-	j++;
-      }
-    }
-  }
-  isiz=pgr->isiz;
-  jsiz=pgr->jsiz;
-  undef=pgr->undef;
-  nn=isiz*jsiz;
-
-  /* init vecs */
-  xgrid_out=(float *)malloc(sizeof(float)*(nn));
-  weight_out=(float *)malloc(sizeof(float)*(nn));
-  weight=(gadouble *)malloc(sizeof(gadouble)*((2*krad+1)*(2*krad+1)));
-  for(k=0;k<nn;k++){
-    xgrid_out[k]=undef;
-    weight_out[k]=undef;
-  }
-  for(k=0;k<((2*krad+1)*(2*krad+1));k++){
-    weight[k]=undef;
+  sum    = (gadouble *)calloc(nn, sizeof(gadouble));
+  wsum   = (gadouble *)calloc(nn, sizeof(gadouble));
+  weight = (gadouble *)malloc(sizeof(gadouble)*ksiz*ksiz);
+  wok    = (char *)malloc(ksiz*ksiz);
+  if (sum==NULL || wsum==NULL || weight==NULL || wok==NULL) {
+    gaprnt (0,"Error from raigrid: memory allocation error\n");
+    free(sum); free(wsum); free(weight); free(wok); gafree(pst);
+    return (1);
   }
 
-  /* defining weights: define distance matrix */
-  for(i=-krad;i<=krad;i++){
-    for(j=-krad;j<=krad;j++){
-      k=(ksiz*(j+krad) + (i+krad));
-      weight[k]=sqrt(i*i+j*j);
-      if (i==0 && j==0) weight[k]=0.5;
-      weight[k]=1./weight[k];					//pesi reciproci
-      if (weight[k]<1./krad) weight[k]=undef;			//metto a undef fuori dal cerchio
-      if (weight[k]!=undef) weight[k]=weight[k]*weight[k];	//quadrato dei pesi
+  /* weights 1/d^2 inside the circle of radius krad (1/d >= 1/krad) */
+  for (j=-krad; j<=krad; j++) {
+    for (i=-krad; i<=krad; i++) {
+      k = ksiz*(j+krad) + (i+krad);
+      w = (i==0 && j==0) ? 0.5 : sqrt((gadouble)(i*i+j*j));
+      w = 1.0/w;
+      wok[k] = (w >= 1.0/krad);
+      weight[k] = w*w;
     }
   }
 
-  /* applying weights */
-  /* istaz: punto grigliato di gr, i: indice del peso centrato su istaz, igrid: punto griglia dato da istaz+i */
-  for(istaz=0;istaz<isiz;istaz++){
-    for(jstaz=0;jstaz<jsiz;jstaz++){
-      xgrid_staz=*(gr + (isiz*jstaz) + istaz);
-      /* caso dato non valido: non ho niente da propagare */
-      if (xgrid_staz==undef) continue;
-      for(i=-krad;i<=krad;i++){
-	igrid=istaz+i;
-	/* spostadomi nel peso in X sono fuori dalla matrice: esco */
-	if(igrid<0 || igrid>=isiz) continue;
-	for(j=-krad;j<=krad;j++){
-	  jgrid=jstaz+j;
-	  /* spostadomi nel peso in Y sono fuori dalla matrice: esco */
-	  if(jgrid<0 || jgrid>=jsiz) continue;
-	  wght=*(weight + ksiz*(j+krad) + (i+krad));
-	  /* caso peso non valido: lascio stare la matrice */
-	  if (wght==undef) continue;
-	  k=(isiz*jgrid) + igrid;
-	  /* caso peso valido e punto vergine nella matrice: lo inserisco */
-#ifdef DVDlog
-printf("PRE  staz:(%2d,%2d) grid:(%2d,%2d) shift:(%2d,%2d) xstaz:%7.2f wght:%7.2f w_out:%7.2f x_out:%7.2f\n",
-  istaz,jstaz,igrid,jgrid,i,j,
-  (xgrid_staz!=undef ? xgrid_staz : -999.9),
-  (wght!=undef ? wght : -999.9),
-  (weight_out[k]!=undef ? weight_out[k] : -999.9),
-  (xgrid_out[k]!=undef ? xgrid_out[k] : -999.9));
-#endif
-
-	  if (xgrid_out[k]==undef) {
-	    xgrid_out[k]=xgrid_staz*wght;
-	    weight_out[k]=wght;
-	  /* caso peso valido e punto non vergine nella matrice: lo sommo */
-	  } else {
-	    xgrid_out[k]=xgrid_out[k]+xgrid_staz*wght;
-	    weight_out[k]=weight_out[k]+wght;
-	  }
-#ifdef DVDlog
-printf("SUM                                          xstaz:%7.2f wght:%7.2f w_out:%7.2f x_out:%7.2f\n",
-  (xgrid_staz!=undef ? xgrid_staz : -999.9),
-  (wght!=undef ? wght : -999.9),
-  (weight_out[k]!=undef ? weight_out[k] : -999.9),
-  (xgrid_out[k]!=undef ? xgrid_out[k] : -999.9));
-#endif
-	}
+  /* every defined point spreads its value to the points around */
+  for (js=0; js<jsiz; js++) {
+    for (is=0; is<isiz; is++) {
+      if (!gru[isiz*js+is]) continue;
+      v = gr[isiz*js+is];
+      for (j=-krad; j<=krad; j++) {
+        jg = js+j;
+        if (jg<0 || jg>=jsiz) continue;
+        for (i=-krad; i<=krad; i++) {
+          ig = is+i;
+          if (ig<0 || ig>=isiz) continue;
+          k = ksiz*(j+krad) + (i+krad);
+          if (!wok[k]) continue;
+          sum[isiz*jg+ig]  += v*weight[k];
+          wsum[isiz*jg+ig] += weight[k];
+        }
       }
     }
   }
 
-  /* normalizing by weight sum */
-  for(k=0;k<nn;k++){
-    if(weight_out[k]!=undef) xgrid_out[k]/=weight_out[k];
+  /* weighted mean where reached, the defined points keep their value */
+  for (k=0; k<nn; k++) {
+    if (gru[k]) continue;
+    if (wsum[k]>0.0) { gr[k] = sum[k]/wsum[k]; gru[k] = 1; }
+    else gr[k] = pgr->undef;
   }
 
-  /* restore original exact values where defiend */
-  for(k=0;k<nn;k++){
-    if(*(gr + k)!=undef) xgrid_out[k]=*(gr + k);
-  }
-
-  /* log weights and matrix */
-  if (LOG) {
-    printf("WEIGHTS\n\t");
-    for(i=-krad;i<=krad;i++){
-      printf(" i=%d\t",i);
-    }
-    printf("\n");
-    for(j=-krad;j<=krad;j++){
-      printf("j=%d\t",j);
-      for(i=-krad;i<=krad;i++){
-	wght=*(weight + ksiz*(j+krad) + (i+krad));
-	printf("%+.2f\t",(wght!=undef ? wght: -9.99));
-	if (i==krad)  printf("\n");
-      }
-    }
-    printf("MATRIX NEW (OLD)\n\t");
-    for(i=0;i<isiz;i++){
-      printf(" i=%d\t",i);
-    }
-    printf("\n");
-    float new,old,wgh;
-    for(j=0;j<jsiz;j++){
-      for(i=0;i<isiz;i++){
-	if (i==0)  printf("NEW j=%d\t",j);
-	new=*(xgrid_out + isiz*j + i);
-	printf("%d\t",(new!=undef ? (int)new : -999));
-	if (i==isiz-1)  printf("\n");
-      }
-      for(i=0;i<isiz;i++){
-	if (i==0)  printf("OLD j=%d\t",j);
-	old=*(gr + isiz*j + i);
-	printf("%d\t",(old!=undef ? (int)old : -999));
-	if (i==isiz-1)  printf("\n");
-      }
-      for(i=0;i<isiz;i++){
-	if (i==0)  printf("WGH j=%d\t",j);
-	wgh=*(weight_out + isiz*j + i);
-	printf("%.2f\t",(wgh!=undef ? wgh : -9.99));
-	if (i==isiz-1)  printf("\n--------------------------------------------------\n");
-      }
-    }
-  }
-
-  /* saving output grid */
-  pgr->grid = xgrid_out;
-
-err:
-  /* release memory */
-  if (error) if (pst) gafree (pst); 
-  if (xx!=NULL) gree(xx,"f400");
-  if (yy!=NULL) gree(yy,"f401");
-  if (error) 
-    return 1;
-  else 
-    return 0;
+  free(sum); free(wsum); free(weight); free(wok);
+  return (0);
 }
 
 /* -------------------------------------------------------- */
 /*
-  dvd - Performs box averaging between two grids
+  dvd - bterp(expr,grid): box average of expr on the cells of grid (like
+  lterp, but each cell of the destination grid gets the area weighted mean
+  of the source cells it covers; undefined source cells do not count).
+  Both expressions must vary in lon and lat.
+
+  ARPAL 2.2.5-19: the check of the varying dimensions was wrong (it failed
+  only when the 1st dimension was lat); the undefined source cells are
+  those of the mask (umask), not those equal to undef; the source grid is
+  released with gagfre (only its data were released, and with a single
+  value the data are inside the structure); no release of uninitialized
+  pointers on errors; the unused directions idir2/jdir2 (which read x2[1]
+  also for one point) are removed.
 */
+static gaint DVDcoords (struct gagrid *pgr, gaint ij, gadouble **c) {
+  gadouble (*conv) (gadouble *, gadouble);
+  gadouble *vals, *x;
+  gaint i, n, d;
+  d = ij ? pgr->jdim : pgr->idim;
+  n = ij ? pgr->jsiz : pgr->isiz;
+  conv = ij ? pgr->jgrab : pgr->igrab;
+  vals = ij ? pgr->jvals : pgr->ivals;
+  x = (gadouble *)galloc(sizeof(gadouble)*n,"dvdcoord");
+  if (x==NULL) return (1);
+  for (i=0; i<n; i++) x[i] = conv(vals,(gadouble)(pgr->dimmin[d]+i));
+  *c = x;
+  return (0);
+}
+
 gaint ffDVDbterp (struct gafunc *pfc, struct gastat *pst) {
   struct gastat pst2;
-  struct gagrid *pgr1,*pgr2;
-  gadouble (*iconv) (gadouble *, gadouble);
-  gadouble *x1=NULL,*x2=NULL,*y1=NULL,*y2=NULL;
-  gadouble *gr1,*gr2;
-  gadouble xd,yd,rd,t1,t2,tstrt,tscl;
-  gaint rc,i,j,i1,i2,ij,ij2,idir2,jdir2,j1,j2,error=0;
-  char *gr1u,*gr2u;
-  size_t sz;
-  int isiz1,jsiz1,isiz2,jsiz2;
-  gadouble u1,u2;
-  
-   /* Evaluate args number */
+  struct gagrid *pgr1=NULL, *pgr2;
+  gadouble *x1=NULL, *x2=NULL, *y1=NULL, *y2=NULL;
+  gaint rc, error=0;
+
   if (pfc->argnum!=2) {
-    gaprnt (0,"Error from BTERP: Two arguments expected \n");
+    gaprnt (0,"Error from bterp: Two arguments expected: bterp(expr,grid)\n");
     return (1);
   }
 
-   /* Evaluate the 2nd expression, the destination grid */
-  pst2=*pst;
+  /* 2nd expression: the destination grid (it becomes the result) */
+  pst2 = *pst;
   rc = gaexpr(pfc->argpnt[1],pst);
-  if (rc) { error=1; goto err; }
+  if (rc) return (rc);
   if (pst->type!=1) {
-    gaprnt (0,"Error from BTERP: The 2nd argument is not a grid expression \n");
-    error=1; goto err;
+    gaprnt (0,"Error from bterp: The 2nd argument is not a grid expression \n");
+    gafree (pst);
+    return (1);
+  }
+  pgr2 = pst->result.pgr;
+  if (pgr2->idim!=0 || pgr2->jdim!=1) {
+    gaprnt (0,"Error from bterp: The grids must vary in LON and LAT \n");
+    gafree (pst);
+    return (1);
   }
 
-  /* Check environment */
-  if (pst->idim!=0 && pst->idim==1) {
-    gaprnt (0,"Error from BTERP: The grids must vary on LON and LAT \n");
-    error=1; goto err;
-  }
-
-  /* Evaluate the 1st expression, the data values to be interpolated */
+  /* 1st expression: the data to be averaged */
   rc = gaexpr(pfc->argpnt[0],&pst2);
-  if (rc) { error=1; goto err; }
+  if (rc) { gafree (pst); return (rc); }
   if (pst2.type!=1) {
-    gaprnt (0,"Error from BTERP: The 1st argument is not a grid expression \n");
+    gaprnt (0,"Error from bterp: The 1st argument is not a grid expression \n");
+    gafree (&pst2);
+    gafree (pst);
+    return (1);
+  }
+  pgr1 = pst2.result.pgr;
+  if (pgr1->idim!=0 || pgr1->jdim!=1) {
+    gaprnt (0,"Error from bterp: The grids must vary in LON and LAT \n");
     error=1; goto err;
   }
 
-  /* Verify that the varying dimensions are equivalent */
-  if (pst->idim!=pst2.idim || pst->jdim!=pst2.jdim) {
-    printf ("Error from BTERP: Grids have different varying dimensions \n");
+  if (DVDcoords(pgr1,0,&x1) || DVDcoords(pgr1,1,&y1) ||
+      DVDcoords(pgr2,0,&x2) || DVDcoords(pgr2,1,&y2)) {
+    gaprnt (0,"Error from bterp: memory allocation error\n");
     error=1; goto err;
   }
 
-  /* Get the grids */
-  pgr1 = pst2.result.pgr;     /* data source grid (input)  */
-  pgr2 = pst->result.pgr;     /* destination grid (result) */
-  gr1  = pgr1->grid;
-  gr1u = pgr1->umask;
-  gr2  = pgr2->grid;
-  gr2u = pgr2->umask;
-
-  /* get i dim coordinates for both grids */
-  x1 = NULL;
-  sz = sizeof(gadouble)*pgr1->isiz;
-  x1 = (gadouble *)galloc(sz,"x1");
-  if (x1==NULL) { error=1; goto err; }
-  iconv = pgr1->igrab;
-  j=0;
-  for (i=pgr1->dimmin[pgr1->idim];i<=pgr1->dimmax[pgr1->idim];i++) {
-    *(x1+j) = iconv(pgr1->ivals,(gadouble)i);
-    j++;
-  }
-  x2 = NULL;
-  sz = sizeof(gadouble)*pgr2->isiz;
-  x2 = (gadouble *)galloc(sz,"x2");
-  if (x2==NULL) { error=1; goto err; }
-  iconv = pgr2->igrab;
-  j=0;
-  for (i=pgr2->dimmin[pgr2->idim];i<=pgr2->dimmax[pgr2->idim];i++) {
-    *(x2+j) = iconv(pgr2->ivals,(gadouble)i);
-    j++;
-  }
-
-  /* get j dim coordinates for both grids */
-  y1 = NULL;
-  sz = sizeof(gadouble)*pgr1->jsiz;
-  y1 = (gadouble *)galloc(sz,"y1");
-  if (y1==NULL) { error=1; goto err; }
-  iconv = pgr1->jgrab;
-  j=0;
-  for (i=pgr1->dimmin[pgr1->jdim];i<=pgr1->dimmax[pgr1->jdim];i++) {
-    *(y1+j) = iconv(pgr1->jvals,(gadouble)i);
-    j++;
-  }
-  y2 = NULL;
-  sz = sizeof(gadouble)*pgr2->jsiz;
-  y2 = (gadouble *)galloc(sz,"y2");
-  if (y2==NULL) { error=1; goto err; }
-  iconv = pgr2->jgrab;
-  j=0;
-  for (i=pgr2->dimmin[pgr2->jdim];i<=pgr2->dimmax[pgr2->jdim];i++) {
-    *(y2+j) = iconv(pgr2->jvals,(gadouble)i);
-    j++;
-  }
-
-  /* see which way x y vary with i : -1 decresce, +1 cresce */
-  if (pgr2->ilinr == 0) {
-    idir2 = -1;
-    if (*(x2+1) > *x2) idir2 = 1;
-  } else {
-    idir2 = 1;
-  }
-  if (pgr2->jlinr == 0) {
-    jdir2 = -1;
-    if (*(y2+1) > *y2) jdir2 = 1;
-  } else {
-    jdir2 = 1;
-  }
-
-/* box average */
-  isiz1=pgr1->isiz;
-  jsiz1=pgr1->jsiz;
-  isiz2=pgr2->isiz;
-  jsiz2=pgr2->jsiz;
-  u1=pgr1->undef;
-  u2=pgr2->undef;
-  DVDboxAverage(gr1, u1, x1, y1, isiz1, jsiz1, gr2, u2, x2, y2, isiz2, jsiz2);
+  DVDboxAverage(pgr1->grid, pgr1->umask, x1, y1, pgr1->isiz, pgr1->jsiz,
+                pgr2->grid, pgr2->undef, x2, y2, pgr2->isiz, pgr2->jsiz);
 
 err:
-  /* release memory */
-  if (error) if (pst) gafree (pst); 
   if (x1!=NULL) gree(x1,"f400");
   if (x2!=NULL) gree(x2,"f401");
   if (y1!=NULL) gree(y1,"f402");
   if (y2!=NULL) gree(y2,"f403");
-  if (gr1!=NULL) gree (gr1, NULL);
-  if (gr1u!=NULL) gree (gr1u, NULL);
-  if (error) 
-    return 1;
-  else 
-    return 0;
+  if (pgr1!=NULL) gagfre(pgr1);
+  if (error) { gafree (pst); return (1); }
+  return (0);
 }
 
 /* -------------------------------------------------------- */
@@ -1046,7 +808,7 @@ void DVDlogGrid(char label[], double *gr, double u, double *x, double *y, int is
 /*
   fa la box average della griglia 1 sulla 2
 */
-void DVDboxAverage(gadouble *gr1, gadouble u1, gadouble *x1, gadouble *y1, int isiz1, int jsiz1, gadouble *gr2, gadouble u2, gadouble *x2, gadouble *y2, int isiz2, int jsiz2) {
+void DVDboxAverage(gadouble *gr1, char *m1, gadouble *x1, gadouble *y1, int isiz1, int jsiz1, gadouble *gr2, gadouble u2, gadouble *x2, gadouble *y2, int isiz2, int jsiz2) {
 
 /* definitions */
   gadouble dx1 = DVDfindDelta(x1, isiz1);
@@ -1065,13 +827,13 @@ void DVDboxAverage(gadouble *gr1, gadouble u1, gadouble *x1, gadouble *y1, int i
       printf("----------------------\nBOX AVG grid2 point = (%.2f,%.2f) grid = (%d,%d)\n", lon2, lat2, i2, j2);
 #endif
       //gr2[isiz2*j2 + i2] = DVDgetValue(gr1, u1, x1, y1, dx1, dy1, isiz1, jsiz1, u2, lon2, lat2, dx2, dy2);
-      *(gr2 + (isiz2*j2) + i2) = DVDgetValue(gr1, u1, x1, y1, dx1, dy1, isiz1, jsiz1, u2, lon2, lat2, dx2, dy2);
+      *(gr2 + (isiz2*j2) + i2) = DVDgetValue(gr1, m1, x1, y1, dx1, dy1, isiz1, jsiz1, u2, lon2, lat2, dx2, dy2);
     }
   }
 
 /* log */
 #ifdef DVDlog
-  DVDlogGrid("GRID1", gr1, u1, x1, y1, isiz1, jsiz1);
+  DVDlogGrid("GRID1", gr1, u2, x1, y1, isiz1, jsiz1);
   DVDlogGrid("GRID2", gr2, u2, x2, y2, isiz2, jsiz2);
 #endif
 
@@ -1080,9 +842,9 @@ void DVDboxAverage(gadouble *gr1, gadouble u1, gadouble *x1, gadouble *y1, int i
 /* -------------------------------------------------------- */
 /*
   torna il valore pesato di gr1 sull'area definita intorno a lon2, lat2 con passo dx2, dy2
-  i valori mancanti di gr1 non contribuiscono
+  i valori mancanti di gr1 (maschera m1 a 0) non contribuiscono
 */
-gadouble DVDgetValue(gadouble *gr1, gadouble u1, gadouble *x1, gadouble *y1, gadouble dx1, gadouble dy1, int isiz1, int jsiz1, gadouble u2, gadouble lon2, gadouble lat2, gadouble dx2, gadouble dy2) {
+gadouble DVDgetValue(gadouble *gr1, char *m1, gadouble *x1, gadouble *y1, gadouble dx1, gadouble dy1, int isiz1, int jsiz1, gadouble u2, gadouble lon2, gadouble lat2, gadouble dx2, gadouble dy2) {
   gadouble lon10 = x1[0];
   gadouble lat10 = y1[0];
   int i1, j1;
@@ -1101,7 +863,7 @@ gadouble DVDgetValue(gadouble *gr1, gadouble u1, gadouble *x1, gadouble *y1, gad
 	  //value = gr1[isiz1*j1 + i1];
 	  value = *(gr1 + (isiz1*j1) + i1);
 //printf("i1:%d j1:%d value: %g  u1: %g  diff: %g\n", i1, j1, value, u1, value - u1);
-	  if (fabs(value - u1) < 10*FLT_EPSILON) continue;
+	  if (!m1[isiz1*j1 + i1]) continue;   /* undefined source cell */
 	  areaTot += area;
 	  valueTot += (value * area);
 	  #ifdef DVDlog
