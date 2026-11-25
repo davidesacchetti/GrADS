@@ -174,6 +174,23 @@
       memory leaks removed; bterp checks that the grids vary in lon and
       lat and no longer releases uninitialized pointers on errors.
 
+    Updates (2026-11-25, release 2.2.5-20):
+    * Mouse pointer: while 'q pos' (and q bpos, q rband ...) waits for a
+      click in the graphics window the pointer is the crosshair of the
+      cursor theme (libXcursor loaded at run time, X crosshair otherwise);
+      the normal pointer is restored after the click and at the prompt.
+      New optional display plug-in entry gxdcurs.
+    * 'set dbuff hold' / 'set dbuff release': with hold the drawing goes to
+      an off-screen copy of the window, with release the copy is shown in
+      a single operation. Unlike 'set dbuff on/off' the window, the
+      widgets and the drawing settings are kept, so scripts can redraw
+      parts of the plot following the mouse without flicker. No effect
+      with 'set dbuff on' and in batch mode; 'set dbuff on/off', a window
+      resize and a redraw release a pending hold. New optional display
+      plug-in entry gxdhold (Cairo and X11).
+    * Cairo display: a new drawing context (double buffer, hold) keeps the
+      current color, line width, line caps and antialiasing.
+
 2025-11-19 Version 2.2.4
 
     Updates:

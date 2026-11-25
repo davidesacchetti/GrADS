@@ -286,3 +286,21 @@ Aggiornamento del 24 novembre: release 2.2.5-19
 47. release 2.2.5-19
 
 - grads.spec, opengrads.spec: release 19 e voce nel changelog. ChangeLog e readme_dvd.txt aggiornati.
+
+Aggiornamento del 25 novembre: release 2.2.5-20
+
+48. 1cfb0cd: mirino durante q pos (src/gxX.c, src/gxX11.c, src/gxsubs.c, src/grads.c)
+
+- Mentre q pos (q bpos, rband ...) aspetta un click nella finestra grafica il puntatore diventa il crosshair del tema del cursore (libXcursor caricata con dlopen; se manca XC_crosshair); torna normale dopo il click e al prompt. Nuovo punto d'ingresso facoltativo gxdcurs dei plug-in.
+- Provato su Cairo e X11 (XWayland) con un LD_PRELOAD che registra XDefineCursor/XUndefineCursor.
+
+49. 3744c65: set dbuff hold|release (src/gauser.c, gx.h, gxsubs.c, gxX.c, gxX11.c, gxC.c)
+
+- 'set dbuff hold': il disegno va su una copia fuori schermo della finestra (surface Cairo simile alla finestra, pixmap X11); 'set dbuff release' la copia sulla finestra in un colpo solo. A differenza di set dbuff on/off non cancella la finestra e non tocca i widget: serve agli script che ridisegnano parti della mappa seguendo il mouse (gridview9: linee delle sezioni LIVE, marker, valori) senza sfarfallio.
+- No-op con dbuff on e in batch; dbuff on/off, ridimensionamento e redraw rilasciano prima l'hold; screen save durante l'hold legge dalla copia. Copie X11 senza GraphicsExposures (niente eventi NoExpose).
+- gxC.c: gxCsfc ricreava il contesto Cairo con i valori di default (colore, spessore, cap/join, antialias); ora li mantiene (vale anche per il double buffer).
+- Provato su Cairo e X11 con screenshot sincronizzati: durante hold la finestra non cambia, al release compare tutto; bottoni, colori e spessori invariati. 'set dbuff bogus' da' SET error.
+
+50. release 2.2.5-20
+
+- grads.spec, opengrads.spec: release 20 e voce nel changelog. ChangeLog e readme_dvd.txt aggiornati.

@@ -1,5 +1,5 @@
 RIEPILOGO MODIFICHE - GrADS 2.2.5 (fork ARPAL) e gradspy
-aggiornato al 24 novembre 2026
+aggiornato al 25 novembre 2026
 
 Repository
 - GrADS:   /opt/other/GrADS-2.2.5, branch 2.2.5
@@ -33,6 +33,10 @@ Dettagli completi: changelog_2.2.5.txt e ChangeLog nel repository GrADS.
   (prima ~3,5 KB per swap); al ridimensionamento della finestra il buffer
   nascosto viene ricreato e l'immagine ridisegnata in scala (prima la parte
   ingrandita restava nera). (2.2.5-10, 2.2.5-11)
+- Puntatore a mirino (tema del cursore) mentre q pos aspetta il click. (2.2.5-20)
+- 'set dbuff hold' / 'set dbuff release': ridisegno fuori schermo mostrato in
+  un colpo solo, senza cancellare finestra e widget (niente sfarfallio nelle
+  mappe LIVE di gridview9). (2.2.5-20)
 
 
 2. GrADS 2.2.5 - FUNZIONI E COMANDI

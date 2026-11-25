@@ -19,7 +19,7 @@
 
 Name:           grads
 Version:        2.2.5
-Release:        19%{?dist}
+Release:        20%{?dist}
 Summary:        Tool for easy acces, manipulation, and visualization of data
 
 Group:          Applications/Engineering
@@ -155,6 +155,10 @@ cat udpt | sed -e 's|GRADSPREFIX|%{_prefix}|g' > $RPM_BUILD_ROOT%{_datadir}/%{na
 %endif
 
 %changelog
+* Wed Nov 25 2026 ARPAL Sistemi CMI <sistemi.cmi@arpal.liguria.it> - 2.2.5-20
+- crosshair cursor of the theme while 'q pos' waits for the mouse
+- 'set dbuff hold|release': redraw off screen and show it at once,
+  without clearing the window or the widgets (no flicker)
 * Tue Nov 24 2026 ARPAL Sistemi CMI <sistemi.cmi@arpal.liguria.it> - 2.2.5-19
 - percentile: faster (selection), undefined members skipped, no crash
 - tshift no longer changes the time axis of the source variable;
