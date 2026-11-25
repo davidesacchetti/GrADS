@@ -242,6 +242,7 @@ struct gxdsubs {
   gaint (*gxdsld) (int,char*);   /* screen load: read a saved screen from a PNG file */
   void  (*gxdtitle) (char*);     /* window title (ARPAL 2.2.5-17) */
   void  (*gxdcurs) (gaint);      /* mouse pointer, 0 default 1 crosshair (ARPAL 2.2.5-20) */
+  void  (*gxdhold) (gaint);      /* set dbuff hold/release (ARPAL 2.2.5-20) */
 };
 
 /* Function prototypes for GX library routines  */
@@ -343,6 +344,7 @@ void gxmaskclear (void);
 
 gaint gxstrt (gadouble, gadouble, gaint, gaint, char *, char *, char *);
 void gxwtitle (char *);
+void gxhold (gaint);
 void gxend (void);
 void gxfrme (gaint);
 void gxcolr (gaint);

@@ -92,6 +92,14 @@ void gxcurs (gaint on) {
   if (gxstarted && intflg && dsubs.gxdcurs) dsubs.gxdcurs(on);
 }
 
+/* ARPAL 2.2.5-20: 'set dbuff hold' (on=1) and 'set dbuff release' (on=0):
+   the drawing goes off-screen until release, then appears at once.
+   Ignored in batch mode and by display plug-ins without gxdhold. */
+
+void gxhold (gaint on) {
+  if (gxstarted && intflg && dsubs.gxdhold) dsubs.gxdhold(on);
+}
+
 gaint gxstrt (gadouble xmx, gadouble ymx, gaint batch, gaint hbufsz, char *gxdopt, char *gxpopt, char *xgeom) {
   gaint rc;
 
@@ -355,6 +363,8 @@ gaint gxload(char *gxdopt, char *gxpopt) {
   if (dlerror()!=NULL) dsubs.gxdtitle = NULL;
   dsubs.gxdcurs = dlsym(dhandle,"gxdcurs"); 
   if (dlerror()!=NULL) dsubs.gxdcurs = NULL;
+  dsubs.gxdhold = dlsym(dhandle,"gxdhold"); 
+  if (dlerror()!=NULL) dsubs.gxdhold = NULL;
   return(0);
 }
 

@@ -6262,6 +6262,9 @@ static char *kwds[131] = {"X","Y","Z","T","LON","LAT","LEV","TIME",
         gacln (pcm,1);
       }
     }
+    /* ARPAL 2.2.5-20: hold/release, drawing off-screen without clearing */
+    else if (cmpwrd("hold",cmd)) gxhold(1);
+    else if (cmpwrd("release",cmd)) gxhold(0);
     else goto err;
   }
   else if (cmpwrd("poli",cmd)) {

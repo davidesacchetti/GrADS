@@ -72,6 +72,13 @@ crosshair of the desktop cursor theme (libXcursor, loaded at run time; the core
 X crosshair without it); back to the normal pointer after the awaited click and
 at the command prompt. Cairo and X11 displays, new optional plug-in entry
 <code>gxdcurs</code>.
+<li><b><a href="gradcomdsetdbuff.html">set dbuff hold / release</a></b>
+(2.2.5-20): drawing off-screen until <code>release</code>, then shown at once,
+without clearing the window and keeping the widgets: no flickering when a
+script redraws a saved screen with something over it. Cairo and X11
+displays, new optional plug-in entry <code>gxdhold</code>. A new drawing
+surface keeps the current color, line width and antialiasing (also in double
+buffer mode).
 </ul>
 
 <h3>Functions and commands</h3>

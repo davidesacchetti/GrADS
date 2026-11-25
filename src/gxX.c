@@ -162,7 +162,12 @@ gaint *pn, i, free;
 
 /* Surface where widgets of a given layer are drawn */
 
+static cairo_surface_t *holdsfc = NULL;   /* set dbuff hold (see gxdhold) */
+static gaint hold = 0, holdw = 0, holdh = 0;
+void gxdhold (gaint);
+
 static cairo_surface_t *gxwsfc (gaint bg) {
+  if (hold && holdsfc) return (holdsfc);      /* set dbuff hold */
   if (bg && dblmode && surface2) return (surface2);
   return (surface);
 }
@@ -1718,6 +1723,59 @@ void gxdcurs (gaint on) {
   XFlush(display);
 }
 
+/* ARPAL 2.2.5-20: 'set dbuff hold' / 'set dbuff release'. With hold the
+   drawing goes to an off-screen copy of the window (an X pixmap, created
+   again only when the window size changes), with release the copy is
+   painted on the window in one operation: a redraw made of several steps
+   (screen show, then lines, markers, text) appears at once, without
+   flickering. Unlike 'set dbuff on/off' nothing is cleared and the widgets
+   are kept. No-op in double buffer mode (already off-screen). */
+
+void gxdhold (gaint on) {
+cairo_t *c;
+  if (batch || display==NULL || !win || surface==NULL) return;
+  if (on) {
+    if (hold || dblmode) return;
+    gxCflush(0);
+    if (holdsfc && (holdw!=width || holdh!=height)) {
+      cairo_surface_destroy(holdsfc);
+      holdsfc = NULL;
+    }
+    if (holdsfc==NULL) {
+      holdsfc = cairo_surface_create_similar(surface, CAIRO_CONTENT_COLOR, width, height);
+      if (cairo_surface_status(holdsfc) != CAIRO_STATUS_SUCCESS) {
+        cairo_surface_destroy(holdsfc);
+        holdsfc = NULL;
+        return;
+      }
+      holdw = width;
+      holdh = height;
+    }
+    /* start from what the window shows (copy made by the X server) */
+    cairo_surface_flush(surface);
+    c = cairo_create(holdsfc);
+    cairo_set_operator(c, CAIRO_OPERATOR_SOURCE);
+    cairo_set_source_surface(c, surface, 0, 0);
+    cairo_paint(c);
+    cairo_destroy(c);
+    gxCsfc(holdsfc);
+    hold = 1;
+  } else {
+    if (!hold) return;
+    hold = 0;
+    gxCflush(0);
+    cairo_surface_flush(holdsfc);
+    c = cairo_create(surface);
+    cairo_set_operator(c, CAIRO_OPERATOR_SOURCE);
+    cairo_set_source_surface(c, holdsfc, 0, 0);
+    cairo_paint(c);
+    cairo_destroy(c);
+    cairo_surface_flush(surface);
+    gxCsfc(surface);
+    XFlush(display);
+  }
+}
+
 /* Routine to specify user-defined geometry string for X display window. 
    Must be called before gxdbgn to have any affect */
 
@@ -2178,6 +2236,7 @@ void gxdcirc (gadouble x, gadouble y, gadouble r, gaint flg) {
 }
 
 void gxddbl (void) {                         /* turn on double buffer mode */
+  gxdhold(0);
   XSync(display, 0);
   gxCfrm();  /* clear the foreground */
   /* create a new background surface, set it to be the current drawable */
@@ -2207,6 +2266,7 @@ void gxdswp (void) {                        /* swap command -- copy backgroud to
 }
 
 void gxdsgl (void) {                         /* turn off double buffer mode */
+  gxdhold(0);
   if (dblmode) {
     gxrswd(1);
     gxwclr(0); gxwclr(1);
@@ -2235,6 +2295,7 @@ void gxdxsz (gaint xx, gaint yy) {           /* resize the X window */
 
 void gxdrdw (void) {                        /* Redraw when user resizes window */
 cairo_surface_t *sfc2;
+  gxdhold(0);
   rstate = 0;
   cairo_xlib_surface_set_size(surface, width, height);
   gxCrsiz (width, height);
@@ -2318,7 +2379,8 @@ cairo_t *c;
   }
   c = cairo_create(scrsav[frame]);
   cairo_set_operator(c, CAIRO_OPERATOR_SOURCE);
-  cairo_set_source_surface(c, surface, 0, 0);
+  if (hold && holdsfc) cairo_set_source_surface(c, holdsfc, 0, 0);
+  else cairo_set_source_surface(c, surface, 0, 0);
   cairo_paint(c);
   cairo_destroy(c);
   cairo_surface_flush(scrsav[frame]);

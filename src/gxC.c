@@ -528,6 +528,18 @@ void gxCsfc (cairo_surface_t *Xsfc) {
   Xsurface = surface;
   cr = cairo_create(surface);
   Xcr = cr;
+  /* ARPAL 2.2.5-20: the new context gets the current drawing settings
+     (before it started with cairo's defaults: butt caps, antialias on,
+     default width and color until the next change) */
+  cairo_set_line_cap(cr,CAIRO_LINE_CAP_ROUND);
+  cairo_set_line_join(cr,CAIRO_LINE_JOIN_ROUND);
+  if (!aaflg) cairo_set_antialias(cr,CAIRO_ANTIALIAS_NONE);
+  if (lwidth>0) gxCwid(lwidth);
+  if (lcolor>-900) {
+    force = 1;
+    gxCcol(lcolor);
+    force = 0;
+  }
 }
 
 /* Swap action for double buffering */

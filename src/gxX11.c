@@ -214,6 +214,50 @@ void gxdcurs (gaint on) {
   XFlush(display);
 }
 
+/* ARPAL 2.2.5-20: 'set dbuff hold' / 'set dbuff release'. With hold the
+   drawing goes to an off-screen copy of the window (a pixmap, created
+   again only when the window size changes), with release the copy goes to
+   the window in one operation: a redraw made of several steps (screen
+   show, then lines, markers, text) appears at once, without flickering.
+   Unlike 'set dbuff on/off' nothing is cleared and the widgets are kept.
+   No-op in double buffer mode (already off-screen). The copies are made
+   without graphics exposures (no NoExpose events piling up in the queue). */
+
+static Pixmap holdpm = 0;
+static gaint hold = 0, holdw = 0, holdh = 0;
+
+static void gxwcopy (Drawable src, Drawable dst, gaint w, gaint h) {
+  XSetGraphicsExposures(display, gc, False);
+  XCopyArea(display, src, dst, gc, 0, 0, w, h, 0, 0);
+  XSetGraphicsExposures(display, gc, True);
+}
+
+void gxdhold (gaint on) {
+  if (batch || display==NULL || !win) return;
+  if (on) {
+    if (hold || dblmode) return;
+    if (holdpm && (holdw!=width || holdh!=height)) {
+      XFreePixmap(display, holdpm);
+      holdpm = 0;
+    }
+    if (!holdpm) {
+      holdpm = XCreatePixmap(display, win, width, height, depth);
+      if (!holdpm) return;
+      holdw = width;
+      holdh = height;
+    }
+    gxwcopy(win, holdpm, width, height);   /* start from what the window shows */
+    drwbl = holdpm;
+    hold = 1;
+  } else {
+    if (!hold) return;
+    hold = 0;
+    drwbl = win;
+    gxwcopy(holdpm, win, holdw<width ? holdw : width, holdh<height ? holdh : height);
+    XFlush(display);
+  }
+}
+
 /* Routine to specify user-defined geometry string for X display window. 
    Must be called before gxdbgn to have any affect */
 
@@ -950,6 +994,7 @@ gaint i1,i2,j1,j2;
 
 void gxdsgl (void) {
 gaint i;
+  gxdhold(0);
   if (dblmode) {
     gxrswd(1);
     for (i=0; i<512; i++) { obj[i].type=-1; obj2[i].type = -1;}
@@ -963,6 +1008,7 @@ gaint i;
 
 void gxddbl (void) {
 gaint i;
+  gxdhold(0);
   pmap = XCreatePixmap (display, win, width, height, depth);
   XSync(display, 0) ; /* hoop */
   if (pmap==(Pixmap)NULL) {
@@ -1300,6 +1346,7 @@ void gxdsfn(void) {
 
 void gxdrdw (void) {
 int i;
+  gxdhold(0);
   rstate = 0;
   devbck = gxdbkq();
   XSetForeground(display, gc, cvals[devbck]);
@@ -2916,7 +2963,8 @@ void gxdssv (int frame) {
     scrw[frame] = width;
     scrh[frame] = height;
   }
-  XCopyArea (display, win, pmaps[frame], gc, 0, 0, width, height, 0, 0);
+  if (hold) gxwcopy(holdpm, pmaps[frame], width, height);
+  else XCopyArea (display, win, pmaps[frame], gc, 0, 0, width, height, 0, 0);
 }
 
 void gxdssh (int cnt) {
