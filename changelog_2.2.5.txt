@@ -317,3 +317,15 @@ Aggiornamento del 27 novembre: release 2.2.5-21
 52. release 2.2.5-21
 
 - grads.spec, opengrads.spec: release 21 e voce nel changelog. ChangeLog e readme_dvd.txt aggiornati.
+
+Aggiornamento del 27 novembre: release 2.2.5-22
+
+53. 36adcbe: HDF5 con le API di default della libreria installata (m4/hdf5.m4, src/gaio.c)
+
+- m4/hdf5.m4: tolto HDF5_CFLAGS="-DH5_USE_110_API", che forzava le API 1.10 e cancellava l'eventuale -I della directory di hdf5 trovata dal configure.
+- gaio.c (h5pattrs, usata da q attr): con HDF5 >= 1.12 H5Oget_info3 con H5O_info2_t e solo il numero di attributi (H5O_INFO_NUM_ATTRS); con HDF5 piu' vecchi (EL8, 1.10) il codice di prima. Le altre funzioni HDF5 usate non cambiano tra 1.10 e 1.14.
+- Provato con HDF5 1.14.6 compilando GrADS prima e dopo (stesse opzioni dello spec): netCDF3 e netCDF4 con sdfopen, netCDF4 con dtype hdf5_grid, HDF5 puro con gruppi e attributi di tutti i tipi, file reali model.nc e aero.nc anche convertiti in netCDF4 compressi: valori, indefiniti e q attr identici. valgrind: nessun errore nel codice HDF5/netCDF.
+
+54. release 2.2.5-22
+
+- grads.spec, opengrads.spec: release 22 e voce nel changelog. ChangeLog e readme_dvd.txt aggiornati.

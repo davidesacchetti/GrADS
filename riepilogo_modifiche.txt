@@ -66,6 +66,8 @@ Dettagli completi: changelog_2.2.5.txt e ChangeLog nel repository GrADS.
   (-g) della riga di comando. (2.2.5-15)
 - Caricatore delle estensioni (gaudx.c): correzioni su buffer, spazi e ultima
   riga della tabella. (2.2.5-5)
+- HDF5 compilato con le API di default della libreria installata (1.12+),
+  non piu' forzato alle API 1.10. (2.2.5-22)
 - Estensione ams (match, sed): espressioni regolari con PCRE2 al posto di
   PCRE1, fuori manutenzione; stessi risultati, RPM con pcre2-devel; sed
   non perde piu' memoria. (2.2.5-21)

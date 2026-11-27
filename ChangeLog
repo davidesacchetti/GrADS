@@ -197,6 +197,13 @@
       syntax, options and results. The RPM build needs pcre2-devel.
       sed releases its result string (it was never freed).
 
+    Updates (2026-11-27, release 2.2.5-22):
+    * HDF5: GrADS is built with the default API of the installed HDF5
+      library (1.12, 1.14 ...); configure no longer adds -DH5_USE_110_API,
+      which forced the 1.10 API, and keeps the HDF5 include directory it
+      finds. 'q attr' on HDF5 files uses H5Oget_info3 with HDF5 >= 1.12
+      (H5Oget_info with older versions, e.g. 1.10 on EL8).
+
 2025-11-19 Version 2.2.4
 
     Updates:
