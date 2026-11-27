@@ -79,7 +79,9 @@ AC_DEFUN([AC_CHECK_HDF5],
         CPPFLAGS=$ac_hdf5_save_CPPFLAGS
       done
     ])
-  HDF5_CFLAGS="-DH5_USE_110_API"
+dnl HDF5_CFLAGS keeps the include directory found above (it used to be
+dnl overwritten with -DH5_USE_110_API): the code builds with the default
+dnl API of the installed HDF5 (1.10, 1.12, 1.14 ...)
   CPPFLAGS=$ac_hdf5_save_CPPFLAGS
   
   AS_IF([test "$ac_hdf5_h" = 'yes' -a "$ac_hdf5_lib_ok" = 'yes'],
