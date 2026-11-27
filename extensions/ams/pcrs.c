@@ -178,18 +178,18 @@ const char *pcrs_strerror(const int error)
    {
       switch (error)
       {
-         /* Passed-through PCRE error: */
-         case PCRE_ERROR_NOMEMORY:     return "(pcre:) No memory";
+         /* Passed-through PCRE2 error: */
+         case PCRE2_ERROR_NOMEMORY:    return "(pcre:) No memory";
 
          /* Shouldn't happen unless PCRE or PCRS bug, or user messed with compiled job: */
-         case PCRE_ERROR_NULL:         return "(pcre:) NULL code or subject or ovector";
-         case PCRE_ERROR_BADOPTION:    return "(pcre:) Unrecognized option bit";
-         case PCRE_ERROR_BADMAGIC:     return "(pcre:) Bad magic number in code";
-         case PCRE_ERROR_UNKNOWN_NODE: return "(pcre:) Bad node in pattern";
+         case PCRE2_ERROR_NULL:        return "(pcre:) NULL code or subject or ovector";
+         case PCRE2_ERROR_BADOPTION:   return "(pcre:) Unrecognized option bit";
+         case PCRE2_ERROR_BADMAGIC:    return "(pcre:) Bad magic number in code";
+         case PCRE2_ERROR_INTERNAL:    return "(pcre:) Bad node in pattern";
 
          /* Can't happen / not passed: */
-         case PCRE_ERROR_NOSUBSTRING:  return "(pcre:) Fire in power supply"; 
-         case PCRE_ERROR_NOMATCH:      return "(pcre:) Water in power supply";
+         case PCRE2_ERROR_NOSUBSTRING: return "(pcre:) Fire in power supply"; 
+         case PCRE2_ERROR_NOMATCH:     return "(pcre:) Water in power supply";
 
          /* PCRS errors: */
          case PCRS_ERR_NOMEM:          return "(pcrs:) No memory";
@@ -227,10 +227,10 @@ const char *pcrs_strerror(const int error)
  * Returns     :  option integer suitable for pcre 
  *
  *********************************************************************/
- int pcrs_parse_perl_options(const char *optstring, int *flags)
+ uint32_t pcrs_parse_perl_options(const char *optstring, int *flags)
 {
    size_t i;
-   int rc = 0;
+   uint32_t rc = 0;
    *flags = 0;
 
    if (NULL == optstring) return 0;
@@ -241,12 +241,12 @@ const char *pcrs_strerror(const int error)
       {
          case 'e': break; /* ToDo ;-) */
          case 'g': *flags |= PCRS_GLOBAL; break;
-         case 'i': rc |= PCRE_CASELESS; break;
-         case 'm': rc |= PCRE_MULTILINE; break;
+         case 'i': rc |= PCRE2_CASELESS; break;
+         case 'm': rc |= PCRE2_MULTILINE; break;
          case 'o': break;
-         case 's': rc |= PCRE_DOTALL; break;
-         case 'x': rc |= PCRE_EXTENDED; break;
-         case 'U': rc |= PCRE_UNGREEDY; break;
+         case 's': rc |= PCRE2_DOTALL; break;
+         case 'x': rc |= PCRE2_EXTENDED; break;
+         case 'U': rc |= PCRE2_UNGREEDY; break;
          case 'T': *flags |= PCRS_TRIVIAL; break;
          default: break;
       }
@@ -482,8 +482,7 @@ pcrs_job *pcrs_free_job(pcrs_job *job)
    else
    {
       next = job->next;
-      if (job->pattern != NULL) free(job->pattern);
-      if (job->hints != NULL) free(job->hints);
+      if (job->pattern != NULL) pcre2_code_free(job->pattern);
       if (job->substitute != NULL)
       {
          if (job->substitute->text != NULL) free(job->substitute->text);
@@ -631,8 +630,9 @@ pcrs_job *pcrs_compile(const char *pattern, const char *substitute, const char *
 {
    pcrs_job *newjob;
    int flags;
-   int capturecount;
-   const char *error;
+   uint32_t capturecount;
+   int errorcode;
+   PCRE2_SIZE erroroffset;
 
    *errptr = 0;
 
@@ -664,32 +664,22 @@ pcrs_job *pcrs_compile(const char *pattern, const char *substitute, const char *
    /*
     * Compile the pattern
     */
-   newjob->pattern = pcre_compile(pattern, newjob->options, &error, errptr, NULL);
+   newjob->pattern = pcre2_compile((PCRE2_SPTR)pattern, PCRE2_ZERO_TERMINATED, newjob->options,
+                                   &errorcode, &erroroffset, NULL);
    if (newjob->pattern == NULL)
    {
+      *errptr = errorcode;   /* positive PCRE2 compile error code */
       pcrs_free_job(newjob);
       return NULL;
    }
 
-
-   /*
-    * Generate hints. This has little overhead, since the
-    * hints will be NULL for a boring pattern anyway.
-    */
-   newjob->hints = pcre_study(newjob->pattern, 0, &error);
-   if (error != NULL)
-   {
-      *errptr = PCRS_ERR_STUDY;
-      pcrs_free_job(newjob);
-      return NULL;
-   }
- 
+   /* (no pcre_study with PCRE2: the pattern is optimised when compiled) */
 
    /* 
     * Determine the number of capturing subpatterns. 
     * This is needed for handling $+ in the substitute.
     */
-   if (0 > (*errptr = pcre_fullinfo(newjob->pattern, newjob->hints, PCRE_INFO_CAPTURECOUNT, &capturecount)))
+   if (0 > (*errptr = pcre2_pattern_info(newjob->pattern, PCRE2_INFO_CAPTURECOUNT, &capturecount)))
    {
       pcrs_free_job(newjob);
       return NULL;
@@ -699,7 +689,7 @@ pcrs_job *pcrs_compile(const char *pattern, const char *substitute, const char *
    /*
     * Compile the substitute
     */
-   if (NULL == (newjob->substitute = pcrs_compile_replacement(substitute, newjob->flags & PCRS_TRIVIAL, capturecount, errptr)))
+   if (NULL == (newjob->substitute = pcrs_compile_replacement(substitute, newjob->flags & PCRS_TRIVIAL, (int)capturecount, errptr)))
    {
       pcrs_free_job(newjob);
       return NULL;
@@ -801,7 +791,7 @@ int pcrs_execute_list(pcrs_job *joblist, char *subject, size_t subject_length, c
  *********************************************************************/
 int pcrs_execute(pcrs_job *job, char *subject, size_t subject_length, char **result, size_t *result_length)
 {
-   int offsets[3 * PCRS_MAX_SUBMATCHES],
+   int offsets[2 * PCRS_MAX_SUBMATCHES],
        offset,
        i, k,
        matches_found,
@@ -810,6 +800,8 @@ int pcrs_execute(pcrs_job *job, char *subject, size_t subject_length, char **res
    size_t newsize;
    pcrs_match *matches, *dummy;
    char *result_offset;
+   pcre2_match_data *match_data;
+   PCRE2_SIZE *ovector;
 
    offset = i = k = 0;
 
@@ -829,6 +821,15 @@ int pcrs_execute(pcrs_job *job, char *subject, size_t subject_length, char **res
    }
    memset(matches, '\0', max_matches * sizeof(pcrs_match));
 
+   /* PCRE2 match data: room for PCRS_MAX_SUBMATCHES offset pairs */
+   if (NULL == (match_data = pcre2_match_data_create(PCRS_MAX_SUBMATCHES, NULL)))
+   {
+      free(matches);
+      *result = NULL;
+      return(PCRS_ERR_NOMEM);
+   }
+   ovector = pcre2_get_ovector_pointer(match_data);
+
 
    /*
     * Find the pattern and calculate the space
@@ -836,10 +837,14 @@ int pcrs_execute(pcrs_job *job, char *subject, size_t subject_length, char **res
     */
    newsize = subject_length;
 
-   while ((submatches = pcre_exec(job->pattern, job->hints, subject, (int)subject_length, offset, 0, offsets, 3 * PCRS_MAX_SUBMATCHES)) > 0)
+   while ((submatches = pcre2_match(job->pattern, (PCRE2_SPTR)subject, subject_length, (PCRE2_SIZE)offset, 0, match_data, NULL)) > 0)
    {
       job->flags |= PCRS_SUCCESS;
       matches[i].submatches = submatches;
+
+      /* offsets as with PCRE1 (unset submatches: PCRE2_UNSET -> -1) */
+      for (k = 0; k < 2 * submatches; k++)
+         offsets[k] = (ovector[k] == PCRE2_UNSET) ? -1 : (int)ovector[k];
 
       for (k = 0; k < submatches; k++)
       {
@@ -871,6 +876,7 @@ int pcrs_execute(pcrs_job *job, char *subject, size_t subject_length, char **res
          if (NULL == (dummy = (pcrs_match *)realloc(matches, max_matches * sizeof(pcrs_match))))
          {
             free(matches);
+            pcre2_match_data_free(match_data);
             *result = NULL;
             return(PCRS_ERR_NOMEM);
          }
@@ -890,8 +896,10 @@ int pcrs_execute(pcrs_job *job, char *subject, size_t subject_length, char **res
       else
          offset = offsets[1];
    }
+   pcre2_match_data_free(match_data);
+
    /* Pass pcre error through if (bad) failiure */
-   if (submatches < PCRE_ERROR_NOMATCH)
+   if (submatches < PCRE2_ERROR_NOMATCH)
    {
       free(matches);
       return submatches;   

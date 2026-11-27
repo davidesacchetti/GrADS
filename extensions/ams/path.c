@@ -38,8 +38,7 @@
 #include <wordexp.h>
 #include <regex.h>
 
-#include "pcre.h"
-#include "pcrs.h"
+#include "pcrs.h"     /* includes pcre2.h (8-bit) */
 
 #include "grads.h"
 
@@ -53,8 +52,8 @@ pcrs_job *_compile(const char *pattern, const char *options, int *errptr)
 {
    pcrs_job *newjob;
    int flags;
-   int capturecount;
-   const char *error;
+   int errorcode;
+   PCRE2_SIZE erroroffset;
 
    *errptr = 0;
 
@@ -83,9 +82,11 @@ pcrs_job *_compile(const char *pattern, const char *options, int *errptr)
    /*
     * Compile the pattern
     */
-   newjob->pattern = pcre_compile(pattern, newjob->options, &error, errptr,NULL);
+   newjob->pattern = pcre2_compile((PCRE2_SPTR)pattern, PCRE2_ZERO_TERMINATED, newjob->options,
+                                   &errorcode, &erroroffset, NULL);
    if (newjob->pattern == NULL)
    {
+      *errptr = errorcode;   /* positive PCRE2 compile error code */
       pcrs_free_job(newjob);
       return NULL;
    }
@@ -180,6 +181,7 @@ int c_path ( int argc, char **argv, struct gacmn *pcm) {
   wordexp_t wlist;
   regex_t re;
   pcrs_job *job;
+  pcre2_match_data *md;
   int i, n, rc;
   size_t m;
 
@@ -433,8 +435,16 @@ int c_path ( int argc, char **argv, struct gacmn *pcm) {
       gaprnt(0,pout);
       return (1);
     } 
-    rc = pcre_exec(job->pattern,NULL,argv[2],strlen(argv[2]),0,0,NULL,0);
-    if ( rc ) {
+    /* >= 0: match (as pcre_exec with no ovector, which returned 0) */
+    md = pcre2_match_data_create_from_pattern(job->pattern,NULL);
+    if ( md == NULL ) {
+      gaprnt(0,"*** ERROR *** match: no memory\n");
+      pcrs_free_job(job);
+      return (1);
+    }
+    rc = pcre2_match(job->pattern,(PCRE2_SPTR)argv[2],strlen(argv[2]),0,0,md,NULL);
+    pcre2_match_data_free(md);
+    if ( rc < 0 ) {
          snprintf(pout,511,"no\n");
     } else {
          snprintf(pout,511,"yes\n");
@@ -465,7 +475,7 @@ int c_path ( int argc, char **argv, struct gacmn *pcm) {
       gaprnt(2,pout);
       snprintf(pout,511,"%s\n",result);
       gaprnt(2,pout);
-      /* free(Result); */
+      free(result);   /* allocated by pcrs_execute */
     } 
     pcrs_free_job(job);
     return(0);
@@ -875,8 +885,8 @@ characters that forms a search pattern, primarily used in pattern
 matching with strings, or in I<find and replace> type of
 operations. The B<match> and B<sed> functions provided here rely
 extensively on regular expressions, in particular Perl Compatible
-Regular Expressions as implmented in the PCRE Library
-(L<http://www.pcre.org>). If you are not familiar with regular
+Regular Expressions as implmented in the PCRE2 Library
+(L<https://www.pcre.org>). If you are not familiar with regular
 expressions you may want to start with this Quick
 Tutorial (L<http://www.regular-expressions.info/quickstart.html>), or
 consult the references under SEE ALSO below for additional

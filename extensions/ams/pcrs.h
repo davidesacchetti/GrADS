@@ -71,9 +71,11 @@
 #define PCRS_H_VERSION "$Id: pcrs.h,v 1.2 2014/05/26 15:02:01 dasilva Exp $"
 
 
-#ifndef _PCRE_H
-#include <pcre.h>
+/* PCRE2, 8-bit code units (PCRE1 is end-of-life) */
+#ifndef PCRE2_CODE_UNIT_WIDTH
+#define PCRE2_CODE_UNIT_WIDTH 8
 #endif
+#include <pcre2.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -94,7 +96,7 @@ extern "C" {
 /* Error codes */
 #define PCRS_ERR_NOMEM     -10      /* Failed to acquire memory. */
 #define PCRS_ERR_CMDSYNTAX -11      /* Syntax of s///-command */
-#define PCRS_ERR_STUDY     -12      /* pcre error while studying the pattern */
+#define PCRS_ERR_STUDY     -12      /* pcre error while studying the pattern (not used with PCRE2) */
 #define PCRS_ERR_BADJOB    -13      /* NULL job pointer, pattern or substitute */
 #define PCRS_WARN_BADREF   -14      /* Backreference out of range */
 
@@ -137,9 +139,8 @@ typedef struct {
 /* A PCRS job */
 
 typedef struct PCRS_JOB {
-  pcre *pattern;                            /* The compiled pcre pattern */
-  pcre_extra *hints;                        /* The pcre hints for the pattern */
-  int options;                              /* The pcre options (numeric) */
+  pcre2_code *pattern;                      /* The compiled pcre2 pattern */
+  uint32_t options;                         /* The pcre2 compile options (numeric) */
   int flags;                                /* The pcrs and user flags (see "Flags" above) */
   pcrs_substitute *substitute;              /* The compiled pcrs substitute */
   struct PCRS_JOB *next;                    /* Pointer for chaining jobs to joblists */
@@ -163,7 +164,7 @@ extern void             pcrs_free_joblist(pcrs_job *joblist);
 /* Info on errors: */
 extern const char *pcrs_strerror(const int error);
 
-extern int              pcrs_parse_perl_options(const char *optstring, int *flags);
+extern uint32_t         pcrs_parse_perl_options(const char *optstring, int *flags);
 
 #ifdef __cplusplus
 } /* extern "C" */

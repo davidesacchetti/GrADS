@@ -30,7 +30,7 @@ URL:            http://http://cola.gmu.edu/grads
 # The tarball must be downloaded again at every release: spectool -g -f -R <spec>
 Source0:        https://github.com/davidesacchetti/GrADS/archive/refs/heads/%{version}.tar.gz
 
-BuildRequires:  gcc gcc-c++ gcc-gfortran automake autoconf libtool make which pcre-devel
+BuildRequires:  gcc gcc-c++ gcc-gfortran automake autoconf libtool make which pcre2-devel
 BuildRequires:  jasper-devel cairo-devel
 BuildRequires:  hdf-devel hdf5-devel netcdf-devel libxml2-devel udunits2-devel libdap-devel libtirpc-devel
 BuildRequires:  readline-devel ncurses-devel libtirpc-devel

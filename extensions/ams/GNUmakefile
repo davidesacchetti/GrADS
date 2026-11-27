@@ -2,13 +2,14 @@
 # GNU makefile for sample Dynamically Linked UDFs.
 #
 
+# PCRE2 (8-bit); PCRE1 (libpcre) is end-of-life
 OS := $(shell uname -o)
 ifeq ($(OS),Cygwin)
    XCFLAGS = -I/usr/include
-   XLDFLAGS = -lpcre
+   XLDFLAGS = -lpcre2-8
 else
-   XCFLAGS = -I/usr/include/pcre
-   XLDFLAGS = -L/usr/lib/ -lpcre
+   XCFLAGS = $(shell pkg-config --cflags libpcre2-8 2>/dev/null)
+   XLDFLAGS = $(shell pkg-config --libs libpcre2-8 2>/dev/null || echo -lpcre2-8)
 endif
 
 export XCFLAGS XLDFLAGS 
