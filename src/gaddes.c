@@ -202,7 +202,7 @@ gaint gaddes (char *name, struct gafile *pfi, gaint mflag) {
 	haveao = 0;
 	/* get the scale factor attribute name */
 	len = 0;
-	while (*(ch+len)!=' ' && *(ch+len)!='\n' && *(ch+len)!='\t') len++;
+	while (*(ch+len)!=' ' && *(ch+len)!='\n' && *(ch+len)!='\t' && *(ch+len)!='\0') len++;
 	sz = len+3;
 	if ((pfi->scattr = (char *)galloc(sz,"scattr")) == NULL) goto err8;
 	for (i=0; i<len; i++) *(pfi->scattr+i) = *(ch+i);
@@ -215,7 +215,7 @@ gaint gaddes (char *name, struct gafile *pfi, gaint mflag) {
 	  gaprnt (1,"Descriptor File Warning: No offset attribute name in unpack record\n");
 	} else {
 	  len = 0;
-	  while (*(ch+len)!=' ' && *(ch+len)!='\n' && *(ch+len)!='\t') len++;
+	  while (*(ch+len)!=' ' && *(ch+len)!='\n' && *(ch+len)!='\t' && *(ch+len)!='\0') len++;
 	  sz = len+3;
 	  if ((pfi->ofattr = (char *)galloc(sz,"ofattr")) == NULL) goto err8;
 	  for (i=0; i<len; i++) *(pfi->ofattr+i) = *(ch+i);
@@ -755,7 +755,7 @@ gaint gaddes (char *name, struct gafile *pfi, gaint mflag) {
       /* Get the undef attribute name, if it's there */
       if ( (ch=nxtwrd(ch))!=NULL ) {
 	len = 0;
-	while (*(ch+len)!=' ' && *(ch+len)!='\n' && *(ch+len)!='\t') len++;
+	while (*(ch+len)!=' ' && *(ch+len)!='\n' && *(ch+len)!='\t' && *(ch+len)!='\0') len++;
 	sz = len+3;
 	if ((pfi->undefattr = (char *)galloc(sz,"undefattr3")) == NULL) goto err8;
 	for (i=0; i<len; i++) *(pfi->undefattr+i) = *(ch+i);
@@ -766,7 +766,7 @@ gaint gaddes (char *name, struct gafile *pfi, gaint mflag) {
         /* Get the secondry undef attribute name, if it's there */
         if ( (ch=nxtwrd(ch))!=NULL ) {
   	  len = 0;
-	  while (*(ch+len)!=' ' && *(ch+len)!='\n' && *(ch+len)!='\t') len++;
+	  while (*(ch+len)!=' ' && *(ch+len)!='\n' && *(ch+len)!='\t' && *(ch+len)!='\0') len++;
 	  sz = len+3;
 	  if ((pfi->undefattr2 = (char *)galloc(sz,"undefattr4")) == NULL) goto err8;
 	  for (i=0; i<len; i++) *(pfi->undefattr2+i) = *(ch+i);
@@ -2645,7 +2645,7 @@ struct gaattr *parseattr (char *ch) {
   
   /* get the variable name */
   len = 0;
-  while (*(ch+len)!=' ' && *(ch+len)!='\n' && *(ch+len)!='\t') len++;
+  while (*(ch+len)!=' ' && *(ch+len)!='\n' && *(ch+len)!='\t' && *(ch+len)!='\0') len++;
   for (jj=0; jj<len; jj++) varname[jj] = *(ch+jj);
   varname[len] = '\0';
   
@@ -2655,7 +2655,7 @@ struct gaattr *parseattr (char *ch) {
     goto err;
   } 
   len = 0;
-  while (*(ch+len)!=' ' && *(ch+len)!='\n' && *(ch+len)!='\t') len++;
+  while (*(ch+len)!=' ' && *(ch+len)!='\n' && *(ch+len)!='\t' && *(ch+len)!='\0') len++;
   for (jj=0; jj<len; jj++) attrtype[jj] = *(ch+jj);
   attrtype[len] = '\0';
   
@@ -2665,7 +2665,7 @@ struct gaattr *parseattr (char *ch) {
     goto err;
   }
   len = 0;
-  while (*(ch+len)!=' ' && *(ch+len)!='\n' && *(ch+len)!='\t') len++;
+  while (*(ch+len)!=' ' && *(ch+len)!='\n' && *(ch+len)!='\t' && *(ch+len)!='\0') len++;
   for (jj=0; jj<len; jj++) attrname[jj] = *(ch+jj);
   attrname[len] = '\0';
   

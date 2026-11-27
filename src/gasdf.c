@@ -2890,7 +2890,8 @@ size_t sz;
 	      pfi->attr = newattrib;
 	    }
 	    newattrib->next = NULL;
-	    strcpy(newattrib->varname,varname);      
+	    newattrib->fromddf = 0;   /* from the data file, not from the descriptor */
+	    strcpy(newattrib->varname,varname);
 	    strcpy(newattrib->name,attname);      
 	    newattrib->len  = len;
 	    /* We're going to save HDF types as NC types */
@@ -3164,6 +3165,7 @@ nc_type type;
 		pfi->attr = newattrib;
 	      }
 	      newattrib->next = NULL;
+	      newattrib->fromddf = 0;   /* from the data file, not from the descriptor */
 	      strcpy(newattrib->varname,varname);
 	      strcpy(newattrib->name,attname);
 	      newattrib->len  = attlen;
@@ -3552,7 +3554,7 @@ size_t sz;
       /* Get the undef attribute name, if it's there */
       if ((ch=nxtwrd(ch))!=NULL) {
 	len = 0;
-	while (*(ch+len)!=' ' && *(ch+len)!='\n' && *(ch+len)!='\t') len++;
+	while (*(ch+len)!=' ' && *(ch+len)!='\n' && *(ch+len)!='\t' && *(ch+len)!='\0') len++;
 	sz = len+1;
 	if ((pfi->undefattr = (char *)galloc(sz,"undefattr5")) == NULL) goto err8;
 	for (i=0; i<len; i++) *(pfi->undefattr+i) = *(ch+i);
@@ -3562,7 +3564,7 @@ size_t sz;
         /* Get the secondary undef attribute name, if it's there */
         if ((ch=nxtwrd(ch))!=NULL) {
 	  len = 0;
-	  while (*(ch+len)!=' ' && *(ch+len)!='\n' && *(ch+len)!='\t') len++;
+	  while (*(ch+len)!=' ' && *(ch+len)!='\n' && *(ch+len)!='\t' && *(ch+len)!='\0') len++;
 	  sz = len+1;
 	  if ((pfi->undefattr2 = (char *)galloc(sz,"undefattr6")) == NULL) goto err8;
 	  for (i=0; i<len; i++) *(pfi->undefattr2+i) = *(ch+i);
@@ -3585,7 +3587,7 @@ size_t sz;
       parms->xsrch = 0 ;                    
       /* Copy the X dimension name into parms structure*/
       len = 0;
-      while (*(ch+len)!=' ' && *(ch+len)!='\n' && *(ch+len)!='\t') len++;
+      while (*(ch+len)!=' ' && *(ch+len)!='\n' && *(ch+len)!='\t' && *(ch+len)!='\0') len++;
       sz = len+1;
       if ((parms->xdimname = (char *)galloc(sz,"xdimname")) == NULL) goto err8;
       for (i=0; i<len; i++) *(parms->xdimname+i) = *(ch+i);
@@ -3631,7 +3633,7 @@ size_t sz;
       parms->ysrch = 0 ;
       /* Copy the Y dimension name into parms structure*/
       len = 0;
-      while (*(ch+len)!=' ' && *(ch+len)!='\n' && *(ch+len)!='\t') len++;
+      while (*(ch+len)!=' ' && *(ch+len)!='\n' && *(ch+len)!='\t' && *(ch+len)!='\0') len++;
       sz = len+1;
       if ((parms->ydimname = (char *)galloc(sz,"ydimname")) == NULL) goto err8;
       for (i=0; i<len; i++) *(parms->ydimname+i) = *(ch+i);
@@ -3714,7 +3716,7 @@ size_t sz;
       parms->zsrch = 0 ;
       /* Copy the Z dimension name into parms structure*/
       len = 0;
-      while (*(ch+len)!=' ' && *(ch+len)!='\n' && *(ch+len)!='\t') len++;
+      while (*(ch+len)!=' ' && *(ch+len)!='\n' && *(ch+len)!='\t' && *(ch+len)!='\0') len++;
       sz = len+1;
       if ((parms->zdimname = (char *)galloc(sz,"zdimname")) == NULL) goto err8;
       for (i=0; i<len; i++) *(parms->zdimname+i) = *(ch+i);
@@ -3757,7 +3759,7 @@ size_t sz;
       else {
 	/* Copy the T dimension name into parms structure*/
 	len = 0;
-	while (*(ch+len)!=' ' && *(ch+len)!='\n' && *(ch+len)!='\t') len++;
+	while (*(ch+len)!=' ' && *(ch+len)!='\n' && *(ch+len)!='\t' && *(ch+len)!='\0') len++;
 	sz = len+1;
 	if ((parms->tdimname = (char *)galloc(sz,"tdimname")) == NULL) goto err8;
 	for (i=0; i<len; i++) *(parms->tdimname+i) = *(ch+i);
@@ -3838,7 +3840,7 @@ size_t sz;
       parms->esrch  = 0;  /* got the coordinate variable name */
       /* copy the E dimension name into parms structure */
       len = 0;
-      while (*(ch+len)!=' ' && *(ch+len)!='\n' && *(ch+len)!='\t') len++;
+      while (*(ch+len)!=' ' && *(ch+len)!='\n' && *(ch+len)!='\t' && *(ch+len)!='\0') len++;
       sz = len+1;
       if ((parms->edimname = (char *)galloc(sz,"edimname")) == NULL) {
 	gaprnt(0,"Unable to allocate memory for E coordinate axis name\n");

@@ -1436,10 +1436,12 @@ gaint mn1,mn2,hr1,hr2,dy1,dy2,len,mnth;
 /* Return 0 if the string match, otherwise 1.  */
 
 gaint cmpch (char *str1, char *str2, gaint len) {
+gaint i;
 
-  while (len>0) {
-    len--;
-    if (*(str1+len) != *(str2+len)) return (1);
+  /* from the start: a shorter str1 differs at its '\0' and is not read
+     past its end (comparing from the last character it was) */
+  for (i=0; i<len; i++) {
+    if (*(str1+i) != *(str2+i)) return (1);
   }
   return (0);
 }
