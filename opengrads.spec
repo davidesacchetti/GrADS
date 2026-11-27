@@ -18,7 +18,7 @@
 #
 Name:           grads
 Version:        2.2.5
-Release:        22%{?dist}
+Release:        23%{?dist}
 Summary:        Tool for easy acces, manipulation, and visualization of data
 
 Group:          Applications/Engineering
@@ -191,6 +191,10 @@ cat udpt | sed -e 's|GRADSPREFIX|%{_prefix}|g' > $RPM_BUILD_ROOT%{_datadir}/%{na
 %endif
 
 %changelog
+* Fri Nov 27 2026 ARPAL Sistemi CMI <sistemi.cmi@arpal.liguria.it> - 2.2.5-23
+- reads of uninitialized memory found by valgrind: attributes read
+  from netCDF/HDF files ('q attr'), UNDEF attribute name in descriptor
+  files, script parsing (cmpch)
 * Fri Nov 27 2026 ARPAL Sistemi CMI <sistemi.cmi@arpal.liguria.it> - 2.2.5-22
 - HDF5: built with the default API of the installed library (1.12+),
   no longer forced to the 1.10 API (H5_USE_110_API)

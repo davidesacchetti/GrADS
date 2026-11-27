@@ -66,6 +66,9 @@ Dettagli completi: changelog_2.2.5.txt e ChangeLog nel repository GrADS.
   (-g) della riga di comando. (2.2.5-15)
 - Caricatore delle estensioni (gaudx.c): correzioni su buffer, spazi e ultima
   riga della tabella. (2.2.5-5)
+- Letture di memoria non inizializzata trovate con valgrind: attributi dei
+  file netCDF/HDF (q attr), nome dell'attributo di UNDEF nel ctl, parser
+  degli script (cmpch). (2.2.5-23)
 - HDF5 compilato con le API di default della libreria installata (1.12+),
   non piu' forzato alle API 1.10. (2.2.5-22)
 - Estensione ams (match, sed): espressioni regolari con PCRE2 al posto di

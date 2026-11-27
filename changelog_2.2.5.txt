@@ -329,3 +329,16 @@ Aggiornamento del 27 novembre: release 2.2.5-22
 54. release 2.2.5-22
 
 - grads.spec, opengrads.spec: release 22 e voce nel changelog. ChangeLog e readme_dvd.txt aggiornati.
+
+Aggiornamento del 27 novembre: release 2.2.5-23
+
+55. 2c57c93: letture di memoria non inizializzata trovate con valgrind (src/gasdf.c, gaddes.c, gautil.c)
+
+- gasdf.c (read_ncatts, read_hdfatts): gli attributi letti dal file impostano fromddf = 0; prima il campo restava casuale e prntgaattr (q attr) lo usava per separare gli attributi del descrittore da quelli nativi.
+- gaddes.c, gasdf.c: il calcolo della lunghezza di una parola si ferma anche a '\0' (14 cicli, come gia' in gauser.c): con 'UNDEF -999 _FillValue' il nome e' l'ultima parola del record e si leggeva oltre la fine.
+- gautil.c (cmpch): confronto dal primo carattere, si ferma alla prima differenza; partendo dall'ultimo leggeva oltre le righe di script piu' corte della parola chiave (gsrtyp con "return(" ecc.).
+- Provato con valgrind: 0 errori su netCDF3/4, hdf5_grid, HDF5 puro, model.nc, aero.nc e ctl con attributi @ (prima 56 e 175); output identico, skew SHARPpy identico byte per byte.
+
+56. release 2.2.5-23
+
+- grads.spec, opengrads.spec: release 23 e voce nel changelog. ChangeLog e readme_dvd.txt aggiornati.
