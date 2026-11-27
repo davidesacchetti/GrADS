@@ -1,5 +1,5 @@
 RIEPILOGO MODIFICHE - GrADS 2.2.5 (fork ARPAL) e gradspy
-aggiornato al 25 novembre 2026
+aggiornato al 27 novembre 2026
 
 Repository
 - GrADS:   /opt/other/GrADS-2.2.5, branch 2.2.5
@@ -66,6 +66,9 @@ Dettagli completi: changelog_2.2.5.txt e ChangeLog nel repository GrADS.
   (-g) della riga di comando. (2.2.5-15)
 - Caricatore delle estensioni (gaudx.c): correzioni su buffer, spazi e ultima
   riga della tabella. (2.2.5-5)
+- Estensione ams (match, sed): espressioni regolari con PCRE2 al posto di
+  PCRE1, fuori manutenzione; stessi risultati, RPM con pcre2-devel; sed
+  non perde piu' memoria. (2.2.5-21)
 - Mappe hres/lres/mres_world installate in /opt/grads/share/grads. (2.2.5-2)
 - Compilazione con g2clib 1.6.0.
 - tif2ctl: descrittore GrADS per i GeoTIFF; il ctl punta al .tif se non e'

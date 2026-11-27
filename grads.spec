@@ -19,7 +19,7 @@
 
 Name:           grads
 Version:        2.2.5
-Release:        20%{?dist}
+Release:        21%{?dist}
 Summary:        Tool for easy acces, manipulation, and visualization of data
 
 Group:          Applications/Engineering
@@ -155,6 +155,9 @@ cat udpt | sed -e 's|GRADSPREFIX|%{_prefix}|g' > $RPM_BUILD_ROOT%{_datadir}/%{na
 %endif
 
 %changelog
+* Fri Nov 27 2026 ARPAL Sistemi CMI <sistemi.cmi@arpal.liguria.it> - 2.2.5-21
+- ams extension (match, sed): PCRE2 instead of the end-of-life PCRE1;
+  BuildRequires pcre2-devel; sed no longer leaks its result
 * Wed Nov 25 2026 ARPAL Sistemi CMI <sistemi.cmi@arpal.liguria.it> - 2.2.5-20
 - crosshair cursor of the theme while 'q pos' waits for the mouse
 - 'set dbuff hold|release': redraw off screen and show it at once,

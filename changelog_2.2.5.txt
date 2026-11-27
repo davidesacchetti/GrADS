@@ -304,3 +304,16 @@ Aggiornamento del 25 novembre: release 2.2.5-20
 50. release 2.2.5-20
 
 - grads.spec, opengrads.spec: release 20 e voce nel changelog. ChangeLog e readme_dvd.txt aggiornati.
+
+Aggiornamento del 27 novembre: release 2.2.5-21
+
+51. 308bdca: estensione ams con PCRE2 (extensions/ams/path.c, pcrs.c, pcrs.h, GNUmakefile)
+
+- match e sed (path.gex) usano PCRE2 (libpcre2-8) al posto di PCRE1, fuori manutenzione: pcre2_compile, pcre2_pattern_info, pcre2_match con match_data; niente pcre_study. Sintassi, opzioni (i m s x U g T) e risultati invariati.
+- sed libera la stringa risultato (prima restava allocata a ogni chiamata).
+- GNUmakefile: libpcre2-8 da pkg-config; grads.spec e opengrads.spec: BuildRequires pcre2-devel.
+- Provato confrontando il path.gex vecchio e il nuovo su 20 casi di match/sed (opzioni, backreference, match vuoti con g, pattern non validi): output identico; valgrind senza errori ne' perdite.
+
+52. release 2.2.5-21
+
+- grads.spec, opengrads.spec: release 21 e voce nel changelog. ChangeLog e readme_dvd.txt aggiornati.
